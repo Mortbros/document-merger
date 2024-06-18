@@ -14,7 +14,7 @@ from io import BytesIO
 
 import json
 
-from config import Config
+from Config import Config
 import logging
 
 import time
