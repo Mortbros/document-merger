@@ -8,3 +8,18 @@ For all pdfs in a course directory:
 Merge all html files
 
 Done
+
+Prerequisites
+Pip install dependencies from all python files.
+
+Set the location of inputs and outputs in [Config.py](Config.py)
+
+analysis_path, ignored_dirs, tesseract_path, temp_file_path, file_path_map_path, ocr_map_path, pdftohtml_path
+
+TODO: write description of these values
+
+Download xpdftools from:
+
+https://www.xpdfreader.com/
+
+and set the location of pdftohtml.exe as pdftohtml_path in [Config.py](Config.py)
