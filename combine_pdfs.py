@@ -19,14 +19,14 @@ import logging
 
 import time
 
-# Prerequisites:
+# prerequisites:
 # Tesseract at "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
-# Pip install all modules of file
+# pip install all modules of file
 
 # TODO: keep track of all the files that have been created and delete them if the program exits prematurely
 # TODO: make this consistent, log errors instead of breaking
 # TODO: add flag to preview images as the program runs so the user can remove unneccecary images
-
+# TODO: hash image base64 strings
 
 start_time = time.time()
 
@@ -54,15 +54,15 @@ def base64_ocr(b64_string, ocr_map, filename=None):
     if b64_string in ocr_map:
         print(f"\t\tText already extracted: '{ocr_map[b64_string]}'")
         return ocr_map[b64_string], ocr_map
-    # Add missing padding
+    # pad end of base64 string with "=" to fill up to length divisible by 4
     missing_padding = len(b64_string) % 4
     if missing_padding:
         b64_string += "=" * (4 - missing_padding)
 
-    # Convert base64 to bytes
+    # convert base64 to bytes
     img_bytes = base64.b64decode(b64_string)
 
-    # Convert bytes to a PIL image object
+    # convert bytes to a PIL image object
     img = Image.open(BytesIO(img_bytes))
 
     if filename:
@@ -114,7 +114,7 @@ def pdf_to_html_ocr(pdf_in_path, html_out_path, ocr_map):
             base64_image_end_indexes.reverse()
 
             for i, base64_img in enumerate(base64_images):
-                # Add ocr text of the image after the image tag
+                # add ocr text of the image after the image tag
                 ocr_text, ocr_map = base64_ocr(base64_img, ocr_map)
                 if ocr_text:
                     start_ocr = html_text[
@@ -157,18 +157,18 @@ def pdf_to_html_ocr(pdf_in_path, html_out_path, ocr_map):
 
 
 def merge_html_files(output_dir_path, output_file_path):
-    # Get all HTML files in the output directory
+    # get all HTML files in the output directory
     html_files = [
         os.path.join(output_dir_path, f)
         for f in os.listdir(output_dir_path)
         if f.endswith(".html")
     ]
 
-    # Empty out HTML file before writing to prevent it storing multiple outputs
+    # empty out HTML file before writing to prevent it storing multiple outputs
     with open(output_file_path, "w", encoding="utf-8") as out_f:
         out_f.write("")
 
-    # Iterate over all html files and append to merged html file
+    # iterate over all html files and append to merged html file
     with open(output_file_path, "a+", encoding="utf-8") as out_f:
         for html_file in html_files:
             with open(html_file, "r", encoding="utf-8") as f:
@@ -226,11 +226,11 @@ def main():
     with open(config.ocr_map_path, "r") as f:
         ocr_map = json.load(f)
 
-    # Iterate over directories
+    # iterate over directories
     for dir_name in os.listdir("."):
         if os.path.isdir(dir_name):
             if dir_name not in config.ignored_dirs:
-                # Get all pdf files in directory
+                # get all pdf files in directory
                 print(f"Parsing directory: {dir_name}")
                 for pdf in get_pdf_paths(dir_name):
                     print(f"\tConverting PDF: {pdf}")
@@ -242,7 +242,7 @@ def main():
                         ),
                         ocr_map,
                     )
-                # Merge HTML files in the temp directory into a single HTML file in the course directory
+                # merge HTML files in the temp directory into a single HTML file in the course directory
                 merge_html_files(
                     config.temp_file_path, os.path.join(dir_name, f"{dir_name}.html")
                 )
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     config = Config()
     pytesseract.pytesseract.tesseract_cmd = config.tesseract_path
 
-    # Change directory to directory of python file instead of where it is ran from
+    # change directory to directory of python file instead of where it is ran from
     os.chdir(config.analysis_path)
 
     if not os.path.exists(config.temp_file_path):
