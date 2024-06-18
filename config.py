@@ -10,3 +10,4 @@ class Config:
         self.temp_file_path = f"{user_path}Downloads\\PDF2HTML"
         self.file_path_map_path = f"{user_path}Downloads\\PDF2HTML\\path_map.json"
         self.ocr_map_path = f"{user_path}Downloads\\PDF2HTML\\ocr_map.json"
+        self.pdftohtml_path = f"{os.path.dirname(os.path.realpath(__file__))}\\xpdf-tools-win-4.05\\bin64\\pdftohtml.exe"
