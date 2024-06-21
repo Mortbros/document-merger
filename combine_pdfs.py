@@ -51,13 +51,14 @@ def docx_to_html(docx_in_path, html_out_path):
 
 # maybe turn this into an object instead of passing around
 def base64_ocr(b64_string, ocr_map, filename=None):
-    if b64_string in ocr_map:
-        print(f"\t\tText already extracted: '{ocr_map[b64_string]}'")
-        return ocr_map[b64_string], ocr_map
     # pad end of base64 string with "=" to fill up to length divisible by 4
-    missing_padding = len(b64_string) % 4
-    if missing_padding:
+    if missing_padding := len(b64_string) % 4:
         b64_string += "=" * (4 - missing_padding)
+
+    hashed_b64_string = hash(b64_string)
+    if hashed_b64_string in ocr_map:
+        print(f"\t\tText already extracted: '{ocr_map[hashed_b64_string]}'")
+        return ocr_map[hashed_b64_string], ocr_map
 
     # convert base64 to bytes
     img_bytes = base64.b64decode(b64_string)
@@ -77,7 +78,7 @@ def base64_ocr(b64_string, ocr_map, filename=None):
         ocr_text = ""
         print(f"\t\tSkipping image: {w}, {h}")
 
-    ocr_map[b64_string] = ocr_text
+    ocr_map[hashed_b64_string] = ocr_text
     return ocr_text, ocr_map
 
 
@@ -201,16 +202,16 @@ def map_processed_file(in_filepath, out_filepath):
         path_map = json.loads(f.read())
         path_map[in_filepath] = out_filepath
         f.seek(0)
-        f.write(json.dumps(path_map))
+        f.write(json.dumps(path_map, indent=4))
         f.truncate()
         f.close()
 
 
 def check_if_file_already_processed(filepath):
     if os.path.exists(config.file_path_map_path):
-        f = open(config.file_path_map_path, "r+")
-        path_map = json.loads(f.read())
-        return filepath in path_map
+        with open(config.file_path_map_path, "r+") as f:
+            path_map = json.loads(f.read())
+            return filepath in path_map
     else:
         with open(config.file_path_map_path, "w", encoding="utf-8") as f:
             _ = {}
@@ -248,7 +249,7 @@ def main():
                 )
 
     with open(config.ocr_map_path, "w") as f:
-        f.write(json.dumps(ocr_map))
+        f.write(json.dumps(ocr_map, indent=4))
 
 
 if __name__ == "__main__":
