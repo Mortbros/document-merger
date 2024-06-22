@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+import json
 
 
 class Config:
@@ -27,3 +29,18 @@ class Config:
         self.file_path_map_path = f"{user_path}Downloads\\PDF2HTML\\path_map.json"
         self.ocr_map_path = f"{user_path}Downloads\\PDF2HTML\\ocr_map.json"
         self.pdftohtml_path = f"{os.path.dirname(os.path.realpath(__file__))}\\xpdf-tools-win-4.05\\bin64\\pdftohtml.exe"
+
+    def initialise_json_file(self, filename):
+        if not os.path.exists(filename):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            with open(filename, "a+") as f:
+                _ = {}
+                f.write(json.dumps(_))
+
+    def initialise_files(self):
+        self.initialise_json_file(self.file_path_map_path)
+        self.initialise_json_file(self.ocr_map_path)
+        if not os.path.exists(self.temp_file_path):
+            os.makedirs(os.path.dirname(self.temp_file_path), exist_ok=True)
+
+            # created_files.append(self.temp_file_path)
