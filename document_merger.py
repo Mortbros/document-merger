@@ -1,7 +1,7 @@
 import os
-import json
 
 from Converter import Converter
+from StatusTable import StatusTable
 
 from Config import Config
 import logging
@@ -44,17 +44,21 @@ def merge_html_files(output_dir_path, output_file_path):
 
 def main():
     converter = Converter()
+    status_table = StatusTable()
+
     # iterate over directories
     for dir_name in os.listdir("."):
         if os.path.isdir(dir_name):
             if dir_name not in config.ignored_dirs:
                 # get all pdf files in directory
-                print(f"Parsing directory: {dir_name}")
+                status_table.update_status("Directory", dir_name)
                 for pdf in get_pdf_paths(dir_name):
-                    print(f"\tConverting PDF: {pdf}")
                     converter.PDF_to_HTML(
                         pdf,
-                        os.path.join(config.temp_file_path, pdf.split("\\")[-1]),
+                        os.path.join(
+                            config.temp_file_path, dir_name, pdf.split("\\")[-1]
+                        ),
+                        make_output_dirs=True,
                     )
                 # merge HTML files in the temp directory into a single HTML file in the course directory
                 merge_html_files(
@@ -68,15 +72,7 @@ if __name__ == "__main__":
 
     config = Config()
 
-    # initialise files
-    if not os.path.exists(config.ocr_map_path):
-        with open(config.ocr_map_path, "w") as f:
-            _ = {}
-            f.write(json.dumps(_))
-
-    if not os.path.exists(config.temp_file_path):
-        os.mkdir(config.temp_file_path)
-        # created_files.append(config.temp_file_path)
+    config.initialise_files()
 
     # change directory to analysis path
     os.chdir(config.analysis_path)
