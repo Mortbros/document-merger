@@ -2,9 +2,9 @@ from Config import Config
 from StatusTable import StatusTable
 
 import os
-import time
 import re
 import json
+import zlib
 
 import comtypes.client
 
@@ -36,14 +36,23 @@ class Converter:
         pytesseract.pytesseract.tesseract_cmd = self.config.tesseract_path
 
     def convert(
-        self, input_file_path, output_file_path, ocr=True, make_output_dirs=False
+        self,
+        input_file_path,
+        output_file_path,
+        output_type=None,
+        ocr=True,
+        make_output_dirs=False,
     ):
         # convert input and output to absolute paths if not already
         input_file_path = self.prepare_path(input_file_path)
-        output_file_path = self.prepare_path(output_file_path, make_dirs=True)
+        output_file_path = self.prepare_path(
+            output_file_path, new_extension=output_type, make_dirs=True
+        )
 
         input_type = input_file_path.split(".")[-1]
-        output_type = output_file_path.split(".")[-1]
+        output_type = (
+            output_file_path.split(".")[-1] if not output_type else output_type
+        )
 
         if input_type not in self.supported_input_types:
             print(
@@ -67,6 +76,8 @@ class Converter:
                 self.DOCX_to_HTML(input_file_path, output_file_path, make_output_dirs)
             elif input_type == "pptx" and output_type == "html":
                 self.PPTX_to_PDF(input_file_path, output_file_path, make_output_dirs)
+            else:
+                print(f"Invalid conversion type pair {input_type} and {output_type}")
         else:
             self.status_table.update_status("AP?", "✅")
             self.status_table.update_status("AP?", "❌", show=False)
@@ -229,7 +240,7 @@ class Converter:
             b64_string += "=" * (4 - missing_padding)
 
         # if already parsed, return existing value
-        hashed_b64_string = hash(b64_string)
+        hashed_b64_string = zlib.adler32(bytes(b64_string, encoding="utf8"))
         if hashed_b64_string in self.ocr_map:
             self.status_table.update_status("IMS?", "✅ Already")
             # print(f"\t\tText already extracted: '{self.ocr_map[hashed_b64_string]}'")

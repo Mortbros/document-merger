@@ -53,11 +53,12 @@ def main():
                 # get all pdf files in directory
                 status_table.update_status("Directory", dir_name)
                 for pdf in get_pdf_paths(dir_name):
-                    converter.PDF_to_HTML(
+                    converter.convert(
                         pdf,
                         os.path.join(
                             config.temp_file_path, dir_name, pdf.split("\\")[-1]
                         ),
+                        output_type=config.main_output_type,
                         make_output_dirs=True,
                     )
                 # merge HTML files in the temp directory into a single HTML file in the course directory
