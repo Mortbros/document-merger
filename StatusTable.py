@@ -38,24 +38,24 @@ class StatusTable(object):
             if k in self.columns:
                 self.status[k] = statuses[k]
         if show:
-            self.print()
+            self.print(highlight=statuses)
 
     def update_status(self, key, value, show=True):
         if key in self.columns:
             self.status[key] = value
             if show:
-                self.print()
+                self.print(highlight=[key])
 
     # length of string with emojis ✅ = 2 characters
     def elen(self, key):
         k = self.status[key]
         return len(key) - sum(k.count(d) for d in self.double_chars) + self.columns[key]
 
-    def print(self, title=False):
+    def print(self, title=False, highlight=[None]):
         self.status["Timestamp"] = str(datetime.now())[11:19]
         status_row = [
             (
-                self.status[k][0 : self.elen(k)].center(self.elen(k))
+                f"{"\033[30;47m" if k in highlight else ""}{self.status[k][0 : self.elen(k)].center(self.elen(k))}\033[0m"
                 if not title
                 else k.center(self.elen(k))
             )
