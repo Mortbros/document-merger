@@ -33,18 +33,28 @@ class StatusTable(object):
 
         self.print(title=True)
 
-    def update_statuses(self, statuses, show=True):
+    def update_statuses(self, statuses, show=True, reset=""):
         for k in statuses:
             if k in self.columns:
                 self.status[k] = statuses[k]
+        
         if show:
             self.print(highlight=statuses)
 
-    def update_status(self, key, value, show=True):
+        if reset:
+            for k in statuses:
+                if k in self.columns:
+                    self.status[k] = reset
+
+    def update_status(self, key, value, show=True, reset=""):
         if key in self.columns:
             self.status[key] = value
             if show:
                 self.print(highlight=[key])
+            
+            if reset:
+                self.status[key] = reset
+
 
     # length of string with emojis ✅ = 2 characters
     def elen(self, key):

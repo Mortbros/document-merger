@@ -78,12 +78,10 @@ class Converter:
                 self.PPTX_to_PDF(input_file_path, output_file_path, make_output_dirs)
             else:
                 print(f"Invalid conversion type pair {input_type} and {output_type}")
+            self.write_ocr_map()
         else:
-            self.status_table.update_status("AP?", "✅")
-            self.status_table.update_status("AP?", "❌", show=False)
+            self.status_table.update_status("AP?", "✅", reset="❌")
             # print("\t\tFile already processed, skipping")
-
-        self.write_ocr_map()
 
     # def PDF_to_HTML(self, input_file_path, output_file_path):
     #     os.system(
@@ -210,16 +208,16 @@ class Converter:
                 # add ocr text of the image after the image tag
                 ocr_text = self.base64_ocr(base64_img)
                 if ocr_text:
-                    start_ocr = html_text[
-                        max(
-                            base64_image_end_indexes[i] - 10, 0
-                        ) : base64_image_end_indexes[i]
-                    ]
-                    end_ocr = html_text[
-                        base64_image_end_indexes[i] : min(
-                            base64_image_end_indexes[i] + 10, len(html_text) - 1
-                        )
-                    ]
+                    # start_ocr = html_text[
+                    #     max(
+                    #         base64_image_end_indexes[i] - 10, 0
+                    #     ) : base64_image_end_indexes[i]
+                    # ]
+                    # end_ocr = html_text[
+                    #     base64_image_end_indexes[i] : min(
+                    #         base64_image_end_indexes[i] + 10, len(html_text) - 1
+                    #     )
+                    # ]
                     # print(
                     #     f"\t\tInserting OCR text in position: ...{start_ocr}(OCR TEXT HERE){end_ocr}..."
                     # )
@@ -262,7 +260,9 @@ class Converter:
             # print(
             #     f"\t\tFound text in image {img.size}: '{ocr_text.replace('\n', ' ')}'"
             # )
-            self.status_table.update_status("OCR Text", ocr_text.replace("\n", " "))
+            self.status_table.update_status(
+                "OCR Text", ocr_text.replace("\n", " "), reset=" "
+            )
 
         else:
             ocr_text = ""
@@ -302,7 +302,7 @@ class Converter:
             os.makedirs(os.path.dirname(path), exist_ok=True)
 
         if new_extension:
-            self.change_ext(path, new_extension)
+            path = self.change_ext(path, new_extension)
 
         return os.path.abspath(path)
 
