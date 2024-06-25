@@ -17,24 +17,26 @@ class Config:
         prevents re-analysis of files that have already been ran.
         ocr_map_path (str): Location of a JSON that maps hashed base64 image strings to their output text. This prevents
         re-analysis of images that have already been seen.
-        pdftohtml_path (str): Location of the xpdf pdftohtml excecutable.
     """
 
     def __init__(self):
         user_path = os.path.expanduser("~\\")
         self.analysis_path = f"{user_path}OneDrive\\Homework\\2024"
-        self.ignored_dirs = ["Textbooks", "temp", "__pycache__"]
-        self.tesseract_path = "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
+        self.ignored_dirs = ("Textbooks", "temp", "__pycache__")
+        self.merge_file_types = ("pdf", "docx", "pptx")
+        self.main_output_type = "html"
         self.temp_file_path = f"{user_path}Downloads\\document-merger"
         self.keep_temp_files = True
+
         self.file_path_map_path = (
             f"{user_path}Downloads\\document-merger\\path_map.json"
         )
         self.ocr_map_path = f"{user_path}Downloads\\document-merger\\ocr_map.json"
-        self.pdftohtml_path = f"{os.path.dirname(os.path.realpath(__file__))}\\xpdf-tools-win-4.05\\bin64\\pdftohtml.exe"
-        self.main_output_type = "html"
+
         self.show_image = False
         self.image_output_path = f"{self.temp_file_path}\\images"
+
+        self.tesseract_path = "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
 
     def initialise_json_file(self, filename):
         if not os.path.exists(filename):
