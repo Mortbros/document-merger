@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from Converter import Converter
 from StatusTable import StatusTable
@@ -66,6 +67,9 @@ def main():
                     os.path.join(config.temp_file_path, dir_name),
                     os.path.join(dir_name, f"{dir_name}.html"),
                 )
+
+    if not config.keep_temp_files:
+        shutil.rmtree(config.temp_file_path)
 
 
 if __name__ == "__main__":
