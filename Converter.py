@@ -201,14 +201,35 @@ class Converter:
         base64_images = re.findall(base64_image_regex, html_text)
 
         if len(base64_images) > 0:
-            base64_image_end_indexes = list(
-                m.end(0) for m in re.finditer(base64_image_regex, html_text)
-            )
-            base64_image_end_indexes.reverse()
 
             for i, base64_img in enumerate(base64_images):
-                # add ocr text of the image after the image tag
-                ocr_text = self.base64_ocr(base64_img)
+                # determine indexes to put OCR text
+                base64_image_end_indexes = list(
+                    m.end(0) for m in re.finditer(base64_image_regex, html_text)
+                )
+                base64_image_end_indexes.reverse()
+
+                # pad end of base64 string with "=" to fill up to length divisible by 4
+                b64_string = base64_img
+                if missing_padding := len(base64_img) % 4:
+                    b64_string += "=" * (4 - missing_padding)
+
+                # if already parsed, return existing value
+                hashed_b64_string = zlib.adler32(bytes(b64_string, encoding="utf8"))
+
+                ocr_text = None
+
+                if hashed_b64_string in self.ocr_map:
+                    if not self.ocr_map[hashed_b64_string]["ignore"]:
+                        self.status_table.update_status("IMS?", "✅ Already")
+                        # print(f"\t\tText already extracted: '{self.ocr_map[hashed_b64_string]['text']}'")
+                        ocr_text = self.ocr_map[hashed_b64_string]["text"]
+                    else:
+                        html_text.replace(base64_img, "")
+                else:
+                    # add ocr text of the image after the image tag
+                    ocr_text = self.base64_ocr(b64_string)
+
                 if ocr_text:
                     # start_ocr = html_text[
                     #     max(
@@ -234,34 +255,30 @@ class Converter:
         with open(output_file_path, "w", encoding="utf-8") as f:
             f.write(html_text)
 
-    def base64_ocr(self, b64_string, filename=None):
-        # pad end of base64 string with "=" to fill up to length divisible by 4
-        if missing_padding := len(b64_string) % 4:
-            b64_string += "=" * (4 - missing_padding)
-
-        # if already parsed, return existing value
+    def base64_ocr(self, b64_string):
         hashed_b64_string = zlib.adler32(bytes(b64_string, encoding="utf8"))
-        if hashed_b64_string in self.ocr_map:
-            self.status_table.update_status("IMS?", "✅ Already")
-            # print(f"\t\tText already extracted: '{self.ocr_map[hashed_b64_string]['text']}'")
-            return self.ocr_map[hashed_b64_string]["text"]
-
         # convert base64 to bytes
         img_bytes = base64.b64decode(b64_string)
 
         # convert bytes to a PIL image object
         img = Image.open(BytesIO(img_bytes))
 
+        ignore = ""
+
+        if os.path.exists(self.config.image_output_path):
+            img.save(
+                os.path.join(self.config.image_output_path, f"{hashed_b64_string}.png")
+            )
+
         if self.config.show_image:
             img.show()
-            time.sleep(self.config.show_image_timeout)
+
+            ignore = input("Ignore image? (y/N): ")
 
             # hide image
             for proc in psutil.process_iter():
                 if proc.name() == "display":
                     proc.kill()
-
-        ignore = input("Ignore image? (y/N): ")
 
         ocr_text = ""
 

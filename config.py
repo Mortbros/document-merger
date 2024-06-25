@@ -24,27 +24,33 @@ class Config:
         user_path = os.path.expanduser("~\\")
         self.analysis_path = f"{user_path}OneDrive\\Homework\\2024"
         self.ignored_dirs = ["Textbooks", "temp", "__pycache__"]
-        self.ignored_image_hashes = ["3537967318"]
         self.tesseract_path = "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
-        self.temp_file_path = f"{user_path}Downloads\\PDF2HTML"
-        self.file_path_map_path = f"{user_path}Downloads\\PDF2HTML\\path_map.json"
-        self.ocr_map_path = f"{user_path}Downloads\\PDF2HTML\\ocr_map.json"
+        self.temp_file_path = f"{user_path}Downloads\\document-merger"
+        self.keep_temp_files = True
+        self.file_path_map_path = (
+            f"{user_path}Downloads\\document-merger\\path_map.json"
+        )
+        self.ocr_map_path = f"{user_path}Downloads\\document-merger\\ocr_map.json"
         self.pdftohtml_path = f"{os.path.dirname(os.path.realpath(__file__))}\\xpdf-tools-win-4.05\\bin64\\pdftohtml.exe"
         self.main_output_type = "html"
-        self.show_image = True
-        self.show_image_timeout = 10
+        self.show_image = False
+        self.image_output_path = f"{self.temp_file_path}\\images"
 
     def initialise_json_file(self, filename):
         if not os.path.exists(filename):
             os.makedirs(os.path.dirname(filename), exist_ok=True)
-            with open(filename, "a+") as f:
+            with open(filename, "w") as f:
                 _ = {}
                 f.write(json.dumps(_))
 
+    def initialise_directory(self, path):
+        if path:
+            if not os.path.exists(path):
+                os.makedirs(path, exist_ok=True)
+
     def initialise_files(self):
+        self.initialise_directory(self.temp_file_path)
+        self.initialise_directory(self.image_output_path)
+
         self.initialise_json_file(self.file_path_map_path)
         self.initialise_json_file(self.ocr_map_path)
-        if not os.path.exists(self.temp_file_path):
-            os.makedirs(os.path.dirname(self.temp_file_path), exist_ok=True)
-
-            # created_files.append(self.temp_file_path)
