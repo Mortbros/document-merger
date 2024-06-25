@@ -35,7 +35,7 @@ class StatusTable(object):
 
         self.print(title=True)
 
-    def update_statuses(self, statuses, show=True, reset=""):
+    def update_statuses(self, statuses, show=True, reset_to={}):
         for k in statuses:
             if k in self.columns:
                 self.status[k] = statuses[k]
@@ -43,23 +43,22 @@ class StatusTable(object):
         if show:
             self.print(highlight=statuses)
 
-        if reset:
-            for k in statuses:
-                if k in self.columns:
-                    self.status[k] = reset
+        if reset_to:
+            for k in self.columns:
+                self.status[k] = reset_to[k] if k in reset_to.keys() else self.status[k]
 
-    def update_status(self, key, value, show=True, reset=""):
+    def update_status(self, key, value, show=True, reset_to=""):
         if key in self.columns:
             self.status[key] = value
             if show:
                 self.print(highlight=[key])
             
-            if reset:
-                self.status[key] = reset
+            if reset_to:
+                self.status[key] = reset_to
 
     # dirty approximation of glyph length of string with emojis. ✅ = 2 characters in monospace.
     def glen(self, key):
-        return len(key) - sum(self.status[key].count(d) for d in self.double_chars) + self.columns[key]["width"]
+        return len(key) - sum(self.status[key].count(d) for d in self.double_chars) + int(self.columns[key]["width"])
 
     def align(self, key, text=None):
         if text == None:
