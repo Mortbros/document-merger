@@ -24,12 +24,15 @@ class Config:
         user_path = os.path.expanduser("~\\")
         self.analysis_path = f"{user_path}OneDrive\\Homework\\2024"
         self.ignored_dirs = ["Textbooks", "temp", "__pycache__"]
+        self.ignored_image_hashes = ["3537967318"]
         self.tesseract_path = "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
         self.temp_file_path = f"{user_path}Downloads\\PDF2HTML"
         self.file_path_map_path = f"{user_path}Downloads\\PDF2HTML\\path_map.json"
         self.ocr_map_path = f"{user_path}Downloads\\PDF2HTML\\ocr_map.json"
         self.pdftohtml_path = f"{os.path.dirname(os.path.realpath(__file__))}\\xpdf-tools-win-4.05\\bin64\\pdftohtml.exe"
         self.main_output_type = "html"
+        self.show_image = True
+        self.show_image_timeout = 10
 
     def initialise_json_file(self, filename):
         if not os.path.exists(filename):

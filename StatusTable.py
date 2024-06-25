@@ -18,7 +18,7 @@ class StatusTable(object):
                 ("Input", 0),
                 ("Output", 0),
                 ("OCR Text", 10),
-                ("IMS?", 0),
+                ("IMS?", 10),
                 ("AP?", 0),
                 ("Status", 6),
                 ("Timestamp", 0),
@@ -57,7 +57,7 @@ class StatusTable(object):
 
 
     # length of string with emojis ✅ = 2 characters
-    def elen(self, key):
+    def glen(self, key):
         k = self.status[key]
         return len(key) - sum(k.count(d) for d in self.double_chars) + self.columns[key]
 
@@ -65,9 +65,9 @@ class StatusTable(object):
         self.status["Timestamp"] = str(datetime.now())[11:19]
         status_row = [
             (
-                f"{"\033[30;47m" if k in highlight else ""}{self.status[k][0 : self.elen(k)].center(self.elen(k))}\033[0m"
+                f"{"\033[30;47m" if k in highlight else ""}{self.status[k][0 : self.glen(k)].center(self.glen(k))}\033[0m"
                 if not title
-                else k.center(self.elen(k))
+                else k.center(self.glen(k))
             )
             for k in self.status
         ]

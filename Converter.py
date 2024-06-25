@@ -5,6 +5,8 @@ import os
 import re
 import json
 import zlib
+import time
+import psutil
 
 import comtypes.client
 
@@ -241,8 +243,8 @@ class Converter:
         hashed_b64_string = zlib.adler32(bytes(b64_string, encoding="utf8"))
         if hashed_b64_string in self.ocr_map:
             self.status_table.update_status("IMS?", "✅ Already")
-            # print(f"\t\tText already extracted: '{self.ocr_map[hashed_b64_string]}'")
-            return self.ocr_map[hashed_b64_string]
+            # print(f"\t\tText already extracted: '{self.ocr_map[hashed_b64_string]['text']}'")
+            return self.ocr_map[hashed_b64_string]["text"]
 
         # convert base64 to bytes
         img_bytes = base64.b64decode(b64_string)
@@ -250,28 +252,43 @@ class Converter:
         # convert bytes to a PIL image object
         img = Image.open(BytesIO(img_bytes))
 
-        if filename:
-            img.save(filename)
-            self.created_files.append(filename)
+        if self.config.show_image:
+            img.show()
+            time.sleep(self.config.show_image_timeout)
 
-        w, h = img.size
-        if w * h >= 2000 and h > 20 and w > 20:
-            ocr_text = pytesseract.image_to_string(img)
-            # print(
-            #     f"\t\tFound text in image {img.size}: '{ocr_text.replace('\n', ' ')}'"
-            # )
-            self.status_table.update_status(
-                "OCR Text", ocr_text.replace("\n", " "), reset=" "
-            )
+            # hide image
+            for proc in psutil.process_iter():
+                if proc.name() == "display":
+                    proc.kill()
 
+        ignore = input("Ignore image? (y/N): ")
+
+        ocr_text = ""
+
+        if "y" in ignore.lower():
+            self.ocr_map[hashed_b64_string] = {"text": "", "ignore": True}
         else:
-            ocr_text = ""
-            # print(f"\t\tSkipping image: {w}, {h}")
-            self.status_table.update_status("IMS?", f"✅ {w}, {h}")
+            if filename:
+                img.save(filename)
+                # self.created_files.append(filename)
 
-        self.status_table.update_status("IMS?", f"❌", show=False)
+            w, h = img.size
+            if w * h >= 2000 and h > 20 and w > 20:
+                ocr_text = pytesseract.image_to_string(img)
+                # print(
+                #     f"\t\tFound text in image {img.size}: '{ocr_text.replace('\n', ' ')}'"
+                # )
+                self.status_table.update_status(
+                    "OCR Text", ocr_text.replace("\n", " "), reset=" "
+                )
 
-        self.ocr_map[hashed_b64_string] = ocr_text
+            else:
+                # print(f"\t\tSkipping image: {w}, {h}")
+                self.status_table.update_status("IMS?", f"✅ {w}, {h}")
+
+            self.status_table.update_status("IMS?", f"❌", show=False)
+
+            self.ocr_map[hashed_b64_string] = {"text": ocr_text, "ignore": False}
         self.write_ocr_map()
         return ocr_text
 

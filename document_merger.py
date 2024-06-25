@@ -63,7 +63,8 @@ def main():
                     )
                 # merge HTML files in the temp directory into a single HTML file in the course directory
                 merge_html_files(
-                    config.temp_file_path, os.path.join(dir_name, f"{dir_name}.html")
+                    os.path.join(config.temp_file_path, dir_name),
+                    os.path.join(dir_name, f"{dir_name}.html"),
                 )
 
 
