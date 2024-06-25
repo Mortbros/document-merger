@@ -14,14 +14,17 @@ from pdf2docx import Converter as pdf2docx_Converter
 import mammoth
 
 import base64
-from PIL import Image
+from PIL import Image, ImageTk
 import pytesseract
 from io import BytesIO
 
+import tkinter as tk
+from tkinter import simpledialog
 
 # TODO: keep track of all the files that have been created and delete them if the program exits prematurely
 # TODO: make this consistent, log errors instead of breaking
 # TODO: add flag to preview images as the program runs so the user can remove unnecessary images
+# TODO: https://huggingface.co/spaces/gokaygokay/Florence-2/blob/main/app.py
 
 
 class Converter:
@@ -34,6 +37,10 @@ class Converter:
 
         with open(self.config.ocr_map_path, "r") as f:
             self.ocr_map = json.load(f)
+
+        if self.config.show_image:
+            self.tk_root = tk.Tk()
+            self.tk_root.withdraw()
 
         pytesseract.pytesseract.tesseract_cmd = self.config.tesseract_path
 
@@ -192,7 +199,8 @@ class Converter:
         return True
 
     def HTML_ocr(self, output_file_path):
-        self.status_table.update_status("Status", "Running OCR")
+        image_count = 0
+        self.status_table.update_status("Status", f"Starting OCR")
         with open(output_file_path, "r", encoding="utf-8") as f:
             html_text = f.read()
 
@@ -202,7 +210,9 @@ class Converter:
 
         if len(base64_images) > 0:
 
-            for i, base64_img in enumerate(base64_images):
+            for unformatted_b64_img in base64_images:
+                self.status_table.update_status("Status", f"OCR ({image_count})")
+
                 # determine indexes to put OCR text
                 base64_image_end_indexes = list(
                     m.end(0) for m in re.finditer(base64_image_regex, html_text)
@@ -210,40 +220,27 @@ class Converter:
                 base64_image_end_indexes.reverse()
 
                 # pad end of base64 string with "=" to fill up to length divisible by 4
-                b64_string = base64_img
-                if missing_padding := len(base64_img) % 4:
-                    b64_string += "=" * (4 - missing_padding)
+                b64_img = unformatted_b64_img
+                if missing_padding := len(unformatted_b64_img) % 4:
+                    b64_img += "=" * (4 - missing_padding)
 
                 # if already parsed, return existing value
-                hashed_b64_string = zlib.adler32(bytes(b64_string, encoding="utf8"))
+                hashed_b64_string = zlib.adler32(bytes(b64_img, encoding="utf8"))
 
                 ocr_text = None
 
                 if hashed_b64_string in self.ocr_map:
                     if not self.ocr_map[hashed_b64_string]["ignore"]:
                         self.status_table.update_status("IMS?", "✅ Already")
-                        # print(f"\t\tText already extracted: '{self.ocr_map[hashed_b64_string]['text']}'")
                         ocr_text = self.ocr_map[hashed_b64_string]["text"]
                     else:
-                        html_text.replace(base64_img, "")
+                        self.status_table.update_status("IMS?", "✅ Ignored")
+                        html_text.replace(unformatted_b64_img, "")
                 else:
                     # add ocr text of the image after the image tag
-                    ocr_text = self.base64_ocr(b64_string)
+                    ocr_text = self.base64_ocr(b64_img)
 
                 if ocr_text:
-                    # start_ocr = html_text[
-                    #     max(
-                    #         base64_image_end_indexes[i] - 10, 0
-                    #     ) : base64_image_end_indexes[i]
-                    # ]
-                    # end_ocr = html_text[
-                    #     base64_image_end_indexes[i] : min(
-                    #         base64_image_end_indexes[i] + 10, len(html_text) - 1
-                    #     )
-                    # ]
-                    # print(
-                    #     f"\t\tInserting OCR text in position: ...{start_ocr}(OCR TEXT HERE){end_ocr}..."
-                    # )
                     html_text = (
                         html_text[: base64_image_end_indexes[i]]
                         + " OCR text: '"
@@ -251,61 +248,81 @@ class Converter:
                         + "'"
                         + html_text[base64_image_end_indexes[i] :]
                     )
+                image_count += 1
 
         with open(output_file_path, "w", encoding="utf-8") as f:
             f.write(html_text)
 
     def base64_ocr(self, b64_string):
         hashed_b64_string = zlib.adler32(bytes(b64_string, encoding="utf8"))
-        # convert base64 to bytes
-        img_bytes = base64.b64decode(b64_string)
 
-        # convert bytes to a PIL image object
-        img = Image.open(BytesIO(img_bytes))
+        # convert base64 to bytes, convert bytes to a PIL image object
+        img = Image.open(BytesIO(base64.b64decode(b64_string)))
+        w, h = img.size
 
-        ignore = ""
+        ocr_text = ""
 
+        ignore = self.config.determine_ignore_image(w, h)
+        self.ocr_map[hashed_b64_string] = {
+            "text": "",
+            "ignore": ignore,
+            "seen": False,
+        }
+        # save image to file if image_output_path exists
         if os.path.exists(self.config.image_output_path):
             img.save(
                 os.path.join(self.config.image_output_path, f"{hashed_b64_string}.png")
             )
 
-        if self.config.show_image:
-            img.show()
+        if self.config.show_image and not ignore:
+            # create a new Toplevel window
+            top = tk.Toplevel(self.tk_root)
 
-            ignore = input("Ignore image? (y/N): ")
+            prefill = ""
+            if self.config.determine_ignore_image(w, h):
+                prefill = "y"
+            self.status_table.update_status("Status", f"Showing image ({w}, {h})")
 
-            # hide image
-            for proc in psutil.process_iter():
-                if proc.name() == "display":
-                    proc.kill()
+            img.thumbnail((800, 600))
+            tk_img = ImageTk.PhotoImage(img)
 
-        ocr_text = ""
+            label = tk.Label(top, image=tk_img)
+            label.pack()
 
-        if "y" in ignore.lower():
-            self.ocr_map[hashed_b64_string] = {"text": "", "ignore": True}
-        else:
-            if filename:
-                img.save(filename)
-                # self.created_files.append(filename)
+            response = simpledialog.askstring(
+                "Ignore Image", "Ignore? (*/N/exit)", parent=top, initialvalue=prefill
+            )
+            top.destroy()
 
-            w, h = img.size
-            if w * h >= 2000 and h > 20 and w > 20:
-                ocr_text = pytesseract.image_to_string(img)
-                # print(
-                #     f"\t\tFound text in image {img.size}: '{ocr_text.replace('\n', ' ')}'"
-                # )
-                self.status_table.update_status(
-                    "OCR Text", ocr_text.replace("\n", " "), reset=" "
-                )
+            # make the static type checker happy
+            response = "" if not response else response
 
-            else:
-                # print(f"\t\tSkipping image: {w}, {h}")
-                self.status_table.update_status("IMS?", f"✅ {w}, {h}")
+            # "" = don't ignore, any char but n = ignore, n = don't ignore
+            ignore = response != "" and "n" not in response.lower()
+
+            # exit for this session, value of config.show_image in file stays the same
+            if response.lower() == "exit":
+                self.write_ocr_map()
+                self.tk_root.quit()
+                self.config.show_image = False
+
+            self.ocr_map[hashed_b64_string]["seen"] = True
+
+        elif ignore:
+            self.status_table.update_status("IMS?", f"✅ small {w}, {h}")
+
+        if not ignore:
+            # actually run OCR
+            ocr_text = pytesseract.image_to_string(img)
+
+            self.status_table.update_status(
+                "OCR Text", ocr_text.replace("\n", " "), reset=" "
+            )
 
             self.status_table.update_status("IMS?", f"❌", show=False)
 
-            self.ocr_map[hashed_b64_string] = {"text": ocr_text, "ignore": False}
+            self.ocr_map[hashed_b64_string]["text"] = ocr_text
+
         self.write_ocr_map()
         return ocr_text
 

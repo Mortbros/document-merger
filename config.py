@@ -54,3 +54,10 @@ class Config:
 
         self.initialise_json_file(self.file_path_map_path)
         self.initialise_json_file(self.ocr_map_path)
+
+    def determine_ignore_image(self, w, h):
+        ignore = False
+        if w <= 20 or h <= 20 or w * h <= 11904:
+            ignore = True
+
+        return ignore
