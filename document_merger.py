@@ -14,15 +14,6 @@ import time
 # pip install all modules of file
 
 
-def get_pdf_paths(directory):
-    paths = []
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".pdf"):
-                paths.append(os.path.join(root, file))
-    return paths
-
-
 def merge_html_files(output_dir_path, output_file_path):
     # get all HTML files in the output directory
     html_files = [
@@ -43,7 +34,17 @@ def merge_html_files(output_dir_path, output_file_path):
         # created_files.append(output_dir_path)
 
 
-def main():
+if __name__ == "__main__":
+    start_time = time.time()
+    logging.getLogger().setLevel(logging.ERROR)
+
+    config = Config()
+
+    config.initialise_files()
+
+    # change directory to analysis path
+    os.chdir(config.analysis_path)
+
     converter = Converter()
     status_table = StatusTable()
 
@@ -53,11 +54,18 @@ def main():
             if dir_name not in config.ignored_dirs:
                 # get all pdf files in directory
                 status_table.update_status("Directory", dir_name)
-                for pdf in get_pdf_paths(dir_name):
+
+                paths = []
+                for root, dirs, files in os.walk(dir_name):
+                    for file in files:
+                        if file.endswith(config.merge_file_types):
+                            paths.append(os.path.join(root, file))
+
+                for file in paths:
                     converter.convert(
-                        pdf,
+                        file,
                         os.path.join(
-                            config.temp_file_path, dir_name, pdf.split("\\")[-1]
+                            config.temp_file_path, dir_name, file.split("\\")[-1]
                         ),
                         output_type=config.main_output_type,
                         make_output_dirs=True,
@@ -70,19 +78,5 @@ def main():
 
     if not config.keep_temp_files:
         shutil.rmtree(config.temp_file_path)
-
-
-if __name__ == "__main__":
-    start_time = time.time()
-    logging.getLogger().setLevel(logging.ERROR)
-
-    config = Config()
-
-    config.initialise_files()
-
-    # change directory to analysis path
-    os.chdir(config.analysis_path)
-
-    main()
 
     print(f"Finished in {round(time.time() - start_time, 2)} seconds")
