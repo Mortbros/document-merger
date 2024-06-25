@@ -5,8 +5,6 @@ import os
 import re
 import json
 import zlib
-import time
-import psutil
 
 import comtypes.client
 
@@ -25,6 +23,7 @@ from tkinter import simpledialog
 # TODO: make this consistent, log errors instead of breaking
 # TODO: add flag to preview images as the program runs so the user can remove unnecessary images
 # TODO: https://huggingface.co/spaces/gokaygokay/Florence-2/blob/main/app.py
+# TODO: https://github.com/aditeyabaral/convert2pdf/tree/master
 
 
 class Converter:
@@ -84,12 +83,18 @@ class Converter:
             elif input_type == "docx" and output_type == "html":
                 self.DOCX_to_HTML(input_file_path, output_file_path, make_output_dirs)
             elif input_type == "pptx" and output_type == "html":
-                self.PPTX_to_PDF(input_file_path, output_file_path, make_output_dirs)
+                self.PPTX_to_HTML(input_file_path, output_file_path, make_output_dirs)
             else:
                 print(f"Invalid conversion type pair {input_type} and {output_type}")
             self.write_ocr_map()
         else:
-            self.status_table.update_status("AP?", "✅", reset="❌")
+            self.status_table.update_statuses(
+                {
+                    "AP?": "✅",
+                    "File Name": input_file_path.split("\\")[-1],
+                },
+                reset_to={"AP?": "❌", "File Name": ""},
+            )
             # print("\t\tFile already processed, skipping")
 
     # def PDF_to_HTML(self, input_file_path, output_file_path):
@@ -105,7 +110,7 @@ class Converter:
                 "Input": "pdf",
                 "Output": "docx",
                 "Status": "Converting",
-            }
+            },
         )
 
         input_file_path = self.prepare_path(input_file_path, "pdf")
@@ -118,11 +123,19 @@ class Converter:
         cv.close()
         self.created_files.append(output_file_path)
         self.status_table.update_status("Status", "Done")
-        # os.system(f"pdf2docx convert \"{pdf_in_path}\" \"{docx_out_path}\"")
 
         return True
 
     def DOCX_to_HTML(self, input_file_path, output_file_path, make_output_dirs=False):
+        self.status_table.update_statuses(
+            {
+                "File Name": input_file_path.split("\\")[-1],
+                "Input": "docx",
+                "Output": "html",
+                "Status": "Converting",
+            },
+            reset_to={},
+        )
         input_file_path = self.prepare_path(input_file_path, "docx")
         output_file_path = self.prepare_path(
             output_file_path, "html", make_dirs=make_output_dirs
@@ -146,7 +159,7 @@ class Converter:
                 "Input": "pptx",
                 "Out": "pdf",
                 "Status": "Converting",
-            }
+            },
         )
 
         input_file_path = self.prepare_path(input_file_path, "pptx")
@@ -155,10 +168,8 @@ class Converter:
         )
 
         powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
-        powerpoint.Visible = 1
-
-        deck = powerpoint.Presentations.Open(input_file_path)
-        deck.SaveAs(output_file_path, formatType)  # formatType = 32 for ppt to pdf
+        deck = powerpoint.Presentations.Open(input_file_path, WithWindow=False)
+        deck.SaveAs(output_file_path, formatType)
         deck.Close()
         powerpoint.Quit()
 
@@ -166,6 +177,7 @@ class Converter:
 
         return True
 
+    # transitive (multiple steps)
     def PDF_to_HTML(
         self, input_file_path, output_file_path, ocr=True, make_output_dirs=False
     ):
@@ -175,7 +187,7 @@ class Converter:
                 "Input": "pdf",
                 "Output": "html",
                 "Status": "Converting",
-            }
+            },
         )
 
         input_file_path = self.prepare_path(input_file_path, "pdf")
@@ -198,8 +210,37 @@ class Converter:
 
         return True
 
+    # transitive (multiple steps)
+    def PPTX_to_HTML(
+        self, input_file_path, output_file_path, ocr=True, make_output_dirs=False
+    ):
+        self.status_table.update_statuses(
+            {
+                "File Name": input_file_path.split("\\")[-1],
+                "Input": "pptx",
+                "Output": "html",
+                "Status": "Converting",
+            },
+        )
+
+        input_file_path = self.prepare_path(input_file_path, "pptx")
+        output_file_path = self.prepare_path(
+            output_file_path, "html", make_dirs=make_output_dirs
+        )
+
+        pdf_intermediatary_path = self.change_ext(output_file_path, "pdf")
+
+        self.PPTX_to_PDF(input_file_path, pdf_intermediatary_path)
+        self.PDF_to_HTML(pdf_intermediatary_path, output_file_path, ocr=ocr)
+        os.remove(pdf_intermediatary_path)
+
+        self.map_processed_file(input_file_path, output_file_path)
+
+        self.status_table.update_status("Status", "Done")
+
+        return True
+
     def HTML_ocr(self, output_file_path):
-        image_count = 0
         self.status_table.update_status("Status", f"Starting OCR")
         with open(output_file_path, "r", encoding="utf-8") as f:
             html_text = f.read()
@@ -210,8 +251,7 @@ class Converter:
 
         if len(base64_images) > 0:
 
-            for unformatted_b64_img in base64_images:
-                self.status_table.update_status("Status", f"OCR ({image_count})")
+            for i, unformatted_b64_img in enumerate(base64_images):
 
                 # determine indexes to put OCR text
                 base64_image_end_indexes = list(
@@ -231,10 +271,14 @@ class Converter:
 
                 if hashed_b64_string in self.ocr_map:
                     if not self.ocr_map[hashed_b64_string]["ignore"]:
-                        self.status_table.update_status("IMS?", "✅ Already")
+                        self.status_table.update_statuses(
+                            {"IMS?": "✅ Already", "Status": f"OCR ({i + 1})"}
+                        )
                         ocr_text = self.ocr_map[hashed_b64_string]["text"]
                     else:
-                        self.status_table.update_status("IMS?", "✅ Ignored")
+                        self.status_table.update_statuses(
+                            {"IMS?": "✅ Ignored", "Status": f"OCR ({i + 1})"}
+                        )
                         html_text.replace(unformatted_b64_img, "")
                 else:
                     # add ocr text of the image after the image tag
@@ -248,7 +292,6 @@ class Converter:
                         + "'"
                         + html_text[base64_image_end_indexes[i] :]
                     )
-                image_count += 1
 
         with open(output_file_path, "w", encoding="utf-8") as f:
             f.write(html_text)
@@ -316,7 +359,7 @@ class Converter:
             ocr_text = pytesseract.image_to_string(img)
 
             self.status_table.update_status(
-                "OCR Text", ocr_text.replace("\n", " "), reset=" "
+                "OCR Text", ocr_text.replace("\n", " "), reset_to=" "
             )
 
             self.status_table.update_status("IMS?", f"❌", show=False)
