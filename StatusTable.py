@@ -13,15 +13,17 @@ class StatusTable(object):
         self.double_chars = ["❌", "✅"]
         self.columns = OrderedDict(
             [
-                ("Directory", 20),
-                ("File Name", 20),
-                ("Input", 0),
-                ("Output", 0),
-                ("OCR Text", 10),
-                ("IMS?", 10),
-                ("AP?", 0),
-                ("Status", 6),
-                ("Timestamp", 0),
+                ("Directory", {"width": 20, "align": "center"}),
+                ("File Name", {"width": 20, "align": "center"}),
+                ("Input", {"width": 0, "align": "center"}),
+                ("Output", {"width": 0, "align": "center"}),
+                ("OCR Text", {"width": 10, "align": "left"}),
+                # Image skipped?
+                ("IMS?", {"width": 10, "align": "left"}),
+                # Already processed?
+                ("AP?", {"width": 0, "align": "left"}),
+                ("Status", {"width": 6, "align": "center"}),
+                ("Timestamp", {"width": 0, "align": "center"}),
             ]
         )
         self.status = OrderedDict()
@@ -55,19 +57,27 @@ class StatusTable(object):
             if reset:
                 self.status[key] = reset
 
-
-    # length of string with emojis ✅ = 2 characters
+    # dirty approximation of glyph length of string with emojis. ✅ = 2 characters in monospace.
     def glen(self, key):
-        k = self.status[key]
-        return len(key) - sum(k.count(d) for d in self.double_chars) + self.columns[key]
+        return len(key) - sum(self.status[key].count(d) for d in self.double_chars) + self.columns[key]["width"]
+
+    def align(self, key, text=None):
+        if text == None:
+            text = key
+        if self.columns[key]["align"] == "center":
+            return text.center(self.glen(key))
+        elif self.columns[key]["align"] == "left":
+            return text.ljust(self.glen(key))
+        else: # defaults to center align
+            return text.center(self.glen(key))
 
     def print(self, title=False, highlight=[None]):
         self.status["Timestamp"] = str(datetime.now())[11:19]
         status_row = [
             (
-                f"{"\033[30;47m" if k in highlight else ""}{self.status[k][0 : self.glen(k)].center(self.glen(k))}\033[0m"
+                f"{"\033[30;47m" if k in highlight else ""}{self.align(k, self.status[k][0 : self.glen(k)])}\033[0m"
                 if not title
-                else k.center(self.glen(k))
+                else self.align(k)
             )
             for k in self.status
         ]
