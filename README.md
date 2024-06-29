@@ -1,12 +1,24 @@
 # Document Merger
 ## Process
+For every file of the input type(s) in each directory in the main directory
+Then convert from input type(s) to output type, deleting any intermediary files
+Merge all output files into a single file for each directory in the main directory
 
-For all pdfs in each directory in the main directory:
-1. Convert pdf to docx
-2. Convert docx to HTML
-3. Delete docx
+## Supported types
+| Type | Output | Merge |
+|--|--|--|
+| html | ✅ | ✅ |
+| pdf  | ❌ | ❌ |
+| docx | ✅ | ❌ |
+| pptx | ❌ | ❌ |
 
-Merge all html files into a single file for each directory in the main directory
+| ➡️ to ⬇️ | html | pdf | docx | pptx |
+|-----------|------|-----|------|------|
+| html      | ➖  | ✅  |  ✅  | ✅  |
+| pdf       | ❌  | ➖  |  ❌  | ❌  |
+| docx      | ❌  | ✅  |  ➖  | ❌  |
+| pptx      | ❌  | ❌  |  ❌  | ➖  |
+
 
 ## Prerequisites
 Pip install dependencies from all python files.
