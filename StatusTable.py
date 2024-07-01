@@ -4,12 +4,13 @@ from datetime import datetime
 
 class StatusTable(object):
 
-    def __new__(cls):
+    def __new__(cls, print_output):
         if not hasattr(cls, "instance"):
             cls.instance = super(StatusTable, cls).__new__(cls)
+            cls.instance.print_output = print_output
         return cls.instance
 
-    def __init__(self):
+    def __init__(self, print_output):
         self.double_chars = ["❌", "✅"]
         self.columns = OrderedDict(
             [
@@ -32,8 +33,11 @@ class StatusTable(object):
 
         self.status["IMS?"] = "❌"
         self.status["AP?"] = "❌"
+        
+        self.print_output = print_output
 
         self.print(title=True)
+
 
     def update_statuses(self, statuses, show=True, reset_to={}):
         for k in statuses:
@@ -71,22 +75,23 @@ class StatusTable(object):
             return text.center(self.glen(key))
 
     def print(self, title=False, highlight=[None]):
-        self.status["Timestamp"] = str(datetime.now())[11:19]
-        status_row = [
-            (
-                f"{"\033[30;47m" if k in highlight else ""}{self.align(k, self.status[k][0 : self.glen(k)])}\033[0m"
-                if not title
-                else self.align(k)
-            )
-            for k in self.status
-        ]
-        print(" | ".join(status_row))
-        if title:
-            print(
-                "+".join(
-                    [
-                        "-" * (len(k) + (1 if i == 0 else 2))
-                        for i, k in enumerate(status_row)
-                    ]
+        if self.print_output:
+            self.status["Timestamp"] = str(datetime.now())[11:19]
+            status_row = [
+                (
+                    f"{"\033[30;47m" if k in highlight else ""}{self.align(k, self.status[k][0 : self.glen(k)])}\033[0m"
+                    if not title
+                    else self.align(k)
                 )
-            )
+                for k in self.status
+            ]
+            print(" | ".join(status_row))
+            if title:
+                print(
+                    "+".join(
+                        [
+                            "-" * (len(k) + (1 if i == 0 else 2))
+                            for i, k in enumerate(status_row)
+                        ]
+                    )
+                )

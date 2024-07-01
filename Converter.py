@@ -32,7 +32,7 @@ class Converter:
         self.supported_input_types = ["pdf", "html", "pptx", "docx"]
         self.supported_output_types = ["pdf", "html"]
         self.config = Config()
-        self.status_table = StatusTable()
+        self.status_table = StatusTable(self.config.print_status_table)
 
         with open(self.config.ocr_map_path, "r") as f:
             self.ocr_map = json.load(f)

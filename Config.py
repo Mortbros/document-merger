@@ -36,6 +36,8 @@ class Config:
         self.show_image = False
         self.image_output_path = f"{self.temp_file_path}\\images"
 
+        self.print_status_table = True
+
         self.tesseract_path = "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
 
     def initialise_json_file(self, filename):
