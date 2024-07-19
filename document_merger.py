@@ -46,7 +46,7 @@ if __name__ == "__main__":
     os.chdir(config.analysis_path)
 
     converter = Converter()
-    status_table = StatusTable()
+    status_table = StatusTable(config.print_status_table)
 
     # iterate over directories
     for dir_name in os.listdir("."):
