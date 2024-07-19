@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Main",
+            "name": "Python Debugger: Document Merger Main",
             "type": "debugpy",
             "request": "launch",
             "program": "document_merger.py",
