@@ -9,10 +9,6 @@ import logging
 
 import time
 
-# prerequisites:
-# Tesseract at "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
-# pip install all modules of file
-
 
 def merge_html_files(output_dir_path, output_file_path):
     # get all HTML files in the output directory
@@ -34,7 +30,7 @@ def merge_html_files(output_dir_path, output_file_path):
         # created_files.append(output_dir_path)
 
 
-if __name__ == "__main__":
+def start():
     start_time = time.time()
     logging.getLogger().setLevel(logging.ERROR)
 
