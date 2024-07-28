@@ -1,4 +1,0 @@
-comtypes==1.4.4
-mammoth==1.8.0
-pdf2docx==0.5.8
-pillow==10.2.0

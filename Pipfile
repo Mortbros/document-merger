@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+comtypes = "==1.4.4"
+mammoth = "==1.8.0"
+pdf2docx = "==0.5.8"
+pillow = "==10.2.0"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
