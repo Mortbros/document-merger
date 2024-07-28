@@ -1,8 +1,10 @@
 # Document Merger
 ## Process
-For every file of the input type(s) in each directory in the main directory
-Then convert from input type(s) to output type, deleting any intermediary files
-Merge all output files into a single file for each directory in the main directory
+1. For every file of the input type(s) in each directory in the main directory:
+
+    1. Convert from input type(s) to output type, deleting any intermediary files
+
+2. Merge all output files into a single file for each directory in the main directory
 
 ## Supported types
 | Type | Output | Merge |
