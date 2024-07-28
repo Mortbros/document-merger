@@ -1,10 +1,10 @@
 import os
 import shutil
 
-from Converter import Converter
-from StatusTable import StatusTable
+from .Converter import Converter
+from .StatusTable import StatusTable
 
-from Config import Config
+from .Config import Config
 import logging
 
 import time

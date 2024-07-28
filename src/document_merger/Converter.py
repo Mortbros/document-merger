@@ -1,5 +1,5 @@
-from Config import Config
-from StatusTable import StatusTable
+from .Config import Config
+from .StatusTable import StatusTable
 
 import os
 import re
