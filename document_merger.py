@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     # iterate over directories
     for dir_name in os.listdir("."):
-        if os.path.isdir(dir_name):
+        if os.path.isdir(dir_name) and len(os.listdir(dir_name)) != 0:
             if dir_name not in config.ignored_dirs:
                 # get all pdf files in directory
                 status_table.update_status("Directory", dir_name)

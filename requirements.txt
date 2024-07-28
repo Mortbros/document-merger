@@ -1,6 +1,4 @@
 comtypes==1.4.4
-logging==0.4.9.6
-mammoth==1.7.0
+mammoth==1.8.0
 pdf2docx==0.5.8
 pillow==10.2.0
-comtypes==1.4.4
