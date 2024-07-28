@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "document-merger"
+version = "0.0.1"
+authors = [{ name = "Sandro Mortimer", email = "sandromort@gmail.com" }]
+description = "Merges documents of various file formats into a single file"
+readme = "README.md"
+requires-python = ">=3.12.3"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: Microsoft :: Windows",
+]
+
+[project.urls]
+Homepage = "https://github.com/Mortbros/document-merger"
+Issues = "https://github.com/Mortbros/document-merger/issues"
