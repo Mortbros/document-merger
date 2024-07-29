@@ -34,7 +34,7 @@ class DocumentMergerConfig:
         ocr_map_path,
         image_output_path,
         tesseract_path,
-        ignored_dirs=("__pycache__"),
+        ignored_dirs=("__pycache__",),
         main_output_type="html",
         keep_temp_files=True,
         show_image=False,

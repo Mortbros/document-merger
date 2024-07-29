@@ -8,7 +8,6 @@ import logging
 
 import time
 
-
 class DocumentMerger:
     def __init__(self, config):
         self.config = config
