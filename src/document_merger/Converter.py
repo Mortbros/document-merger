@@ -21,7 +21,6 @@ from tkinter import simpledialog
 
 # TODO: keep track of all the files that have been created and optionally delete them if the program exits prematurely
 # TODO: make this consistent, log errors instead of breaking
-# TODO: add flag to preview images as the program runs so the user can remove unnecessary images
 # TODO: more advanced OCR: https://huggingface.co/spaces/gokaygokay/Florence-2/blob/main/app.py
 # TODO: https://github.com/aditeyabaral/convert2pdf/tree/master
 
@@ -95,13 +94,6 @@ class Converter:
                 },
                 reset_to={"AP?": "❌", "File Name": ""},
             )
-            # print("\t\tFile already processed, skipping")
-
-    # def PDF_to_HTML(self, input_file_path, output_file_path):
-    #     os.system(
-    #         f'{self.config.pdftohtml_path} -nofonts "{input_file_path}" "{os.path.join(self.config.temp_file_path, output_file_path)}"'
-    #     )
-    #     return True
 
     def PDF_to_DOCX(self, input_file_path, output_file_path, make_output_dirs=False):
         self.status_table.update_statuses(
