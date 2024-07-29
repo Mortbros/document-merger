@@ -2,7 +2,7 @@ import os
 import json
 
 
-class Config:
+class DocumentMergerConfig:
     """
     A class containing config values to aid in the conversion process.
 
@@ -26,28 +26,47 @@ class Config:
         tesseract_path (str): Location of the tesseract OCR excecutable.
     """
 
-    def __init__(self):
-        user_path = os.path.expanduser("~\\")
-        self.analysis_path = f"{user_path}OneDrive\\Homework\\2024"
-        self.ignored_dirs = ("Textbooks", "temp", "__pycache__")
+    def __init__(
+        self,
+        analysis_path,
+        temp_file_path,
+        file_path_map_path,
+        ocr_map_path,
+        image_output_path,
+        tesseract_path,
+        ignored_dirs=("__pycache__"),
+        main_output_type="html",
+        keep_temp_files=True,
+        show_image=False,
+        print_status_table=True,
+        determine_ignore_image=None,
+    ):
+        self.analysis_path = analysis_path
+        self.ignored_dirs = ignored_dirs
         self.merge_file_types = ("pdf", "docx", "pptx")
-        self.main_output_type = "html"
-        self.temp_file_path = f"{user_path}Downloads\\document-merger"
-        self.keep_temp_files = True
+        self.main_output_type = main_output_type
+        self.temp_file_path = temp_file_path
+        self.keep_temp_files = keep_temp_files
 
-        self.file_path_map_path = (
-            f"{user_path}Downloads\\document-merger\\path_map.json"
-        )
-        self.ocr_map_path = f"{user_path}Downloads\\document-merger\\ocr_map.json"
+        self.file_path_map_path = file_path_map_path
+        self.ocr_map_path = ocr_map_path
 
-        self.show_image = False
-        self.image_output_path = f"{self.temp_file_path}\\images"
+        self.show_image = show_image
+        self.image_output_path = image_output_path
 
-        self.print_status_table = True
+        self.print_status_table = print_status_table
 
-        self.tesseract_path = "C:\\Program files\\Tesseract-OCR\\tesseract.exe"
+        self.tesseract_path = tesseract_path
 
-    def determine_ignore_image(self, w, h):
+        if determine_ignore_image is None:
+            if callable(determine_ignore_image):
+                self.determine_ignore_image = self.default_determine_ignore_image
+            else:
+                raise TypeError("determine_ignore_image input must be a function")
+        else:
+            self.determine_ignore_image = determine_ignore_image
+
+    def default_determine_ignore_image(self, w, h):
         ignore = False
         if w <= 20 or h <= 20 or w * h <= 11904:
             ignore = True
