@@ -1,10 +1,10 @@
-from .Config import Config
+from .DocumentMergerConfig import DocumentMergerConfig
 from .Converter import Converter
 from .DocumentMerger import DocumentMerger
 from .StatusTable import StatusTable
 
 __all__ = [
-    "Config",
+    "DocumentMergerConfig",
     "Converter",
     "DocumentMerger",
     "StatusTable",
