@@ -59,12 +59,12 @@ class DocumentMergerConfig:
         self.tesseract_path = tesseract_path
 
         if determine_ignore_image is None:
+            self.determine_ignore_image = determine_ignore_image
+        else:
             if callable(determine_ignore_image):
                 self.determine_ignore_image = self.default_determine_ignore_image
             else:
                 raise TypeError("determine_ignore_image input must be a function")
-        else:
-            self.determine_ignore_image = determine_ignore_image
 
     def default_determine_ignore_image(self, w, h):
         ignore = False
