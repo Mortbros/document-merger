@@ -1,4 +1,4 @@
-from .Config import Config
+from .DocumentMergerConfig import DocumentMergerConfig
 from .StatusTable import StatusTable
 
 import os
@@ -27,11 +27,11 @@ from tkinter import simpledialog
 
 
 class Converter:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.created_files = []
         self.supported_input_types = ["pdf", "html", "pptx", "docx"]
         self.supported_output_types = ["pdf", "html"]
-        self.config = Config()
         self.status_table = StatusTable(self.config.print_status_table)
 
         with open(self.config.ocr_map_path, "r") as f:
