@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "document_merger"
-version = "0.0.1"
+version = "0.0.2"
 authors = [{ name = "Sandro Mortimer", email = "sandromort@gmail.com" }]
 description = "Merges documents of various file formats into a single file"
 readme = "README.md"

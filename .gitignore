@@ -1,3 +1,5 @@
 /xpdf-tools-win-4.05/*
 *.pyc
 *.drawio.bkp
+*.html
+*.msi
