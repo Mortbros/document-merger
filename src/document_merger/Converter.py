@@ -1,4 +1,3 @@
-from .DocumentMergerConfig import DocumentMergerConfig
 from .StatusTable import StatusTable
 
 import os
@@ -39,7 +38,6 @@ class Converter:
         if self.config.show_image:
             self.tk_root = tk.Tk()
             self.tk_root.withdraw()
-
         pytesseract.pytesseract.tesseract_cmd = self.config.tesseract_path
 
     def convert(
@@ -245,7 +243,7 @@ class Converter:
 
             for i, unformatted_b64_img in enumerate(base64_images):
 
-                # determine indexes to put OCR text
+                # determine the indexes in the html to insert the OCR text
                 base64_image_end_indexes = list(
                     m.end(0) for m in re.finditer(base64_image_regex, html_text)
                 )

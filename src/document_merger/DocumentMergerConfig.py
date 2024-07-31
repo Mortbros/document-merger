@@ -3,8 +3,7 @@ import json
 
 
 class DocumentMergerConfig:
-    """
-    A class containing config values to aid in the conversion process.
+    """A class containing config values to aid in the conversion process.
 
     Attributes:
         analysis_path (str): The directory that the main script will run. Analysis will take place on each (not ignored)
@@ -55,11 +54,13 @@ class DocumentMergerConfig:
         self.image_output_path = image_output_path
 
         self.print_status_table = print_status_table
-
-        self.tesseract_path = tesseract_path
+        if os.path.exists(tesseract_path):
+            self.tesseract_path = tesseract_path
+        else:
+            raise FileNotFoundError(f"Tesseract path '{tesseract_path}' is invalid")
 
         if determine_ignore_image is None:
-            self.determine_ignore_image = determine_ignore_image
+            self.determine_ignore_image = self.default_determine_ignore_image
         else:
             if callable(determine_ignore_image):
                 self.determine_ignore_image = self.default_determine_ignore_image

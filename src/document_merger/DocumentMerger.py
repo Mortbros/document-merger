@@ -8,6 +8,7 @@ import logging
 
 import time
 
+
 class DocumentMerger:
     def __init__(self, config):
         self.config = config
@@ -45,7 +46,11 @@ class DocumentMerger:
 
         # iterate over directories
         for dir_name in os.listdir("."):
-            if os.path.isdir(dir_name) and len(os.listdir(dir_name)) != 0:
+            if (
+                os.path.isdir(dir_name)
+                and os.path.exists(dir_name)
+                and len(os.listdir(dir_name)) != 0
+            ):
                 if dir_name not in self.config.ignored_dirs:
                     # get all pdf files in directory
                     status_table.update_status("Directory", dir_name)
