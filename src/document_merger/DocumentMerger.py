@@ -72,11 +72,13 @@ class DocumentMerger:
                             output_type=self.config.main_output_type,
                             make_output_dirs=True,
                         )
-                    # merge HTML files in the temp directory into a single HTML file in the course directory
-                    self.merge_html_files(
-                        os.path.join(self.config.temp_file_path, dir_name),
-                        os.path.join(dir_name, f"{dir_name}.html"),
-                    )
+                    # if no conversion files are found in the directory, don't merge html files
+                    if len(paths) > 0:
+                        # merge HTML files in the temp directory into a single HTML file in the course directory
+                        self.merge_html_files(
+                            os.path.join(self.config.temp_file_path, dir_name),
+                            os.path.join(dir_name, f"{dir_name}.html"),
+                        )
 
         if not self.config.keep_temp_files:
             shutil.rmtree(self.config.temp_file_path)
