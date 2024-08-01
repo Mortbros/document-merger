@@ -302,10 +302,13 @@ class Converter:
             "seen": False,
         }
         # save image to file if image_output_path exists
-        if os.path.exists(self.config.image_output_path):
-            img.save(
-                os.path.join(self.config.image_output_path, f"{hashed_b64_string}.png")
-            )
+        if self.config.image_output_path:
+            if os.path.exists(self.config.image_output_path):
+                img.save(
+                    os.path.join(
+                        self.config.image_output_path, f"{hashed_b64_string}.png"
+                    )
+                )
 
         if self.config.show_image and not ignore:
             # create a new Toplevel window

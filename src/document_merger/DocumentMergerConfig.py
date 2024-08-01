@@ -31,12 +31,12 @@ class DocumentMergerConfig:
         temp_file_path,
         file_path_map_path,
         ocr_map_path,
-        image_output_path,
         tesseract_path,
         ignored_dirs=("__pycache__",),
         main_output_type="html",
         keep_temp_files=True,
         show_image=False,
+        image_output_path=None,
         print_status_table=True,
         determine_ignore_image=None,
     ):
