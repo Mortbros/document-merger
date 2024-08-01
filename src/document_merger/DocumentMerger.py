@@ -58,7 +58,14 @@ class DocumentMerger:
                     paths = []
                     for root, dirs, files in os.walk(dir_name):
                         for file in files:
-                            if file.endswith(self.config.merge_file_types):
+                            # each time we encounter a new file:
+                            # if it matches any relative file name it will be ignored, then its absolute path will be checked against all provided absolute apaths
+                            if (
+                                file.endswith(self.config.merge_file_types)
+                                and file not in self.config.ignored_files
+                                and os.path.abspath(file)
+                                not in self.config.ignored_files
+                            ):
                                 paths.append(os.path.join(root, file))
 
                     for file in paths:

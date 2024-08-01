@@ -33,6 +33,7 @@ class DocumentMergerConfig:
         ocr_map_path,
         tesseract_path,
         ignored_dirs=("__pycache__",),
+        ignored_files=[],
         main_output_type="html",
         keep_temp_files=True,
         show_image=False,
@@ -42,6 +43,8 @@ class DocumentMergerConfig:
     ):
         self.analysis_path = analysis_path
         self.ignored_dirs = ignored_dirs
+        # ignored_files can be a mix of absolute and relative paths.
+        self.ignored_files = ignored_files
         self.merge_file_types = ("pdf", "docx", "pptx")
         self.main_output_type = main_output_type
         self.temp_file_path = temp_file_path
