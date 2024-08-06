@@ -16,6 +16,7 @@ document_merger_config = DocumentMergerConfig(
     keep_temp_files=True,
     show_image=False,
     print_status_table=True,
+    absolute_temp_directory_names=True,
 )
 
 DocumentMerger(document_merger_config).start()

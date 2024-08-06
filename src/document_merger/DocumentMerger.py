@@ -13,11 +13,11 @@ class DocumentMerger:
     def __init__(self, config):
         self.config = config
 
-    def merge_html_files(self, output_dir_path, output_file_path):
+    def merge_html_files(self, input_dir_path, output_file_path):
         # get all HTML files in the output directory
         html_files = [
-            os.path.join(output_dir_path, f)
-            for f in os.listdir(output_dir_path)
+            os.path.join(input_dir_path, f)
+            for f in os.listdir(input_dir_path)
             if f.endswith(".html")
         ]
 
@@ -30,7 +30,7 @@ class DocumentMerger:
             for html_file in html_files:
                 with open(html_file, "r", encoding="utf-8") as f:
                     out_f.write(f.read())
-            # created_files.append(output_dir_path)
+            # created_files.append(input_dir_path)
 
     def start(self):
         start_time = time.time()
@@ -69,13 +69,31 @@ class DocumentMerger:
                                 paths.append(os.path.join(root, file))
 
                     for file in paths:
-                        converter.convert(
-                            file,
-                            os.path.join(
+                        convert_path = os.path.join(
+                            self.config.temp_file_path,
+                            dir_name,
+                            file.split("\\")[-1],
+                        )
+
+                        if self.config.absolute_temp_directory_names:
+                            # Make temporary directory with name that is unique to the input directory
+                            # We do this by removing all invalid letters in the input, then replacing \ with !
+                            # This modified path is then used as the directory name inside the temp file directory
+                            convert_path = os.path.join(
                                 self.config.temp_file_path,
                                 dir_name,
-                                file.split("\\")[-1],
-                            ),
+                                "".join(
+                                    c
+                                    for c in "!".join(
+                                        os.path.abspath(file).split("\\")[0:-1]
+                                    )
+                                    if c.isalnum() or c in " !"
+                                ),
+                            )
+
+                        converter.convert(
+                            file,
+                            convert_path,
                             output_type=self.config.main_output_type,
                             make_output_dirs=True,
                         )

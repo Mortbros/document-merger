@@ -38,6 +38,7 @@ class DocumentMergerConfig:
         keep_temp_files=True,
         show_image=False,
         image_output_path=None,
+        absolute_temp_directory_names=True,
         print_status_table=True,
         determine_ignore_image=None,
     ):
@@ -55,6 +56,8 @@ class DocumentMergerConfig:
 
         self.show_image = show_image
         self.image_output_path = image_output_path
+
+        self.absolute_temp_directory_names = absolute_temp_directory_names
 
         self.print_status_table = print_status_table
         if os.path.exists(tesseract_path):
