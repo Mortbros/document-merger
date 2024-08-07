@@ -1,5 +1,7 @@
 import os
 import json
+import typing
+from typing import Callable
 
 
 class DocumentMergerConfig:
@@ -8,44 +10,44 @@ class DocumentMergerConfig:
     Attributes:
         analysis_path (str): The directory that the main script will run. Analysis will take place on each (not ignored)
             subdirectory individually. i.e a seperate combined file will be created for each initial subdirectory in analysis_path.
-        ignored_dirs (list[str]): A list of directory names in analysis_path that have contents that should not be parsed.
+        ignored_dirs (tuple[str]): A list of directory names in analysis_path that have contents that should not be parsed.
         ignored_files (list[str]): A list of a mix of absolute or relative file paths to ignore when converting.
         merge_file_types (list[str]): List of file types to look for when processing.
         main_output_type (str): Output file extension type.
         temp_file_path (str): Location of where to put temporary output files.
-        keep_temp_files (boolean): Flag to keep/remove temporary files during processing. Note that setting this to false will
+        keep_temp_files (bool): Flag to keep/remove temporary files during processing. Note that setting this to false will
             force the program to reprocess every file.
-        absolute_temp_directory_names (boolean): A flag to enable the absolute path of the inout directory to be included in the
+        absolute_temp_directory_names (bool): A flag to enable the absolute path of the inout directory to be included in the
             directory name in the output temporary directory.
         file_path_map_path (str): Location of a JSON file that maps the path of the input file to the output file. This
             prevents re-analysis of files that have already been ran.
         ocr_map_path (str): Location of a JSON that maps hashed base64 image strings to their output text. This prevents
         re-analysis of images that have already been seen.
-        show_image (boolean): flag to show to-be-processed OCR image to user, to allow manual image ignoring. The program will
+        show_image (bool): flag to show to-be-processed OCR image to user, to allow manual image ignoring. The program will
             show a tkinter window and prompt for ignore status: "" = don't ignore, any char but n = ignore, "n" = don't ignore.
-        image_output_path (str): Path to output OCR images, primarily for debugging purposes.
-        print_status_table (boolean): Flag to print status table
+        image_output_path (str | None): Path to output OCR images, primarily for debugging purposes.
+        print_status_table (bool): Flag to print status table
         tesseract_path (str): Location of the tesseract OCR excecutable.
-        determine_ignore_image (function): A function that takes ints width and height and returns a boolean whether the image should
+        determine_ignore_image (Callable | None): A function that takes ints width and height and returns a boolean whether the image should
             be exempt from being processed by the OCR
     """
 
     def __init__(
         self,
-        analysis_path,
-        temp_file_path,
-        file_path_map_path,
-        ocr_map_path,
-        tesseract_path,
-        ignored_dirs=("__pycache__",),
-        ignored_files=[],
-        main_output_type="html",
-        keep_temp_files=True,
-        show_image=False,
-        image_output_path=None,
-        absolute_temp_directory_names=True,
-        print_status_table=True,
-        determine_ignore_image=None,
+        analysis_path: str,
+        temp_file_path: str,
+        file_path_map_path: str,
+        ocr_map_path: str,
+        tesseract_path: str,
+        ignored_dirs: tuple[str] = ("__pycache__",),
+        ignored_files: list[str] = [],
+        main_output_type: str = "html",
+        keep_temp_files: bool = True,
+        show_image: bool = False,
+        image_output_path: str | None = None,
+        absolute_temp_directory_names: bool = True,
+        print_status_table: bool = True,
+        determine_ignore_image: Callable | None = None,
     ):
         self.analysis_path = analysis_path
         self.ignored_dirs = ignored_dirs
