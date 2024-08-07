@@ -22,6 +22,8 @@ from tkinter import simpledialog
 # TODO: make this consistent, log errors instead of breaking
 # TODO: more advanced OCR: https://huggingface.co/spaces/gokaygokay/Florence-2/blob/main/app.py
 # TODO: https://github.com/aditeyabaral/convert2pdf/tree/master
+# TODO: Fix base64 image OCR text appendation
+# TODO: Add flag to produce imagesless HTML
 
 
 class Converter:

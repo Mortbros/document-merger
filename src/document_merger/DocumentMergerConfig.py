@@ -9,11 +9,14 @@ class DocumentMergerConfig:
         analysis_path (str): The directory that the main script will run. Analysis will take place on each (not ignored)
             subdirectory individually. i.e a seperate combined file will be created for each initial subdirectory in analysis_path.
         ignored_dirs (list[str]): A list of directory names in analysis_path that have contents that should not be parsed.
+        ignored_files (list[str]): A list of a mix of absolute or relative file paths to ignore when converting.
         merge_file_types (list[str]): List of file types to look for when processing.
         main_output_type (str): Output file extension type.
         temp_file_path (str): Location of where to put temporary output files.
         keep_temp_files (boolean): Flag to keep/remove temporary files during processing. Note that setting this to false will
             force the program to reprocess every file.
+        absolute_temp_directory_names (boolean): A flag to enable the absolute path of the inout directory to be included in the
+            directory name in the output temporary directory.
         file_path_map_path (str): Location of a JSON file that maps the path of the input file to the output file. This
             prevents re-analysis of files that have already been ran.
         ocr_map_path (str): Location of a JSON that maps hashed base64 image strings to their output text. This prevents
@@ -23,6 +26,8 @@ class DocumentMergerConfig:
         image_output_path (str): Path to output OCR images, primarily for debugging purposes.
         print_status_table (boolean): Flag to print status table
         tesseract_path (str): Location of the tesseract OCR excecutable.
+        determine_ignore_image (function): A function that takes ints width and height and returns a boolean whether the image should
+            be exempt from being processed by the OCR
     """
 
     def __init__(
@@ -50,14 +55,13 @@ class DocumentMergerConfig:
         self.main_output_type = main_output_type
         self.temp_file_path = temp_file_path
         self.keep_temp_files = keep_temp_files
+        self.absolute_temp_directory_names = absolute_temp_directory_names
 
         self.file_path_map_path = file_path_map_path
         self.ocr_map_path = ocr_map_path
 
         self.show_image = show_image
         self.image_output_path = image_output_path
-
-        self.absolute_temp_directory_names = absolute_temp_directory_names
 
         self.print_status_table = print_status_table
         if os.path.exists(tesseract_path):
