@@ -24,6 +24,8 @@ from tkinter import simpledialog
 # TODO: https://github.com/aditeyabaral/convert2pdf/tree/master
 # TODO: Fix base64 image OCR text appendation
 # TODO: Add flag to produce imagesless HTML
+# TODO: don't delete old version files
+# TODO: store hashes of all the processed files to prevent reprocessing of files at a global level
 
 
 class Converter:
@@ -32,7 +34,7 @@ class Converter:
         self.created_files = []
         self.supported_input_types = ["pdf", "html", "pptx", "docx"]
         self.supported_output_types = ["pdf", "html"]
-        self.status_table = StatusTable(self.config.print_status_table)
+        self.status_table = StatusTable(print_output=self.config.print_status_table)
 
         with open(self.config.ocr_map_path, "r") as f:
             self.ocr_map = json.load(f)
@@ -237,7 +239,7 @@ class Converter:
         with open(output_file_path, "r", encoding="utf-8") as f:
             html_text = f.read()
 
-        base64_image_regex = r"\".*?base64,([^\"]*)\"[^>]*>"
+        base64_image_regex = r"\".*?base64, ?([^\"]*)\"[^>]*>"
 
         base64_images = re.findall(base64_image_regex, html_text)
 
