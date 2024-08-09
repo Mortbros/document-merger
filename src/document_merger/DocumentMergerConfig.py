@@ -15,19 +15,20 @@ class DocumentMergerConfig:
     temp_file_path (str): Location of where to put temporary output files.
     keep_temp_files (bool): Flag to keep/remove temporary files during processing. Note that setting this to false will
         force the program to reprocess every file.
-    absolute_temp_directory_names (bool): A flag to enable the absolute path of the inout directory to be included in the
-        directory name in the output temporary directory.
+    process_subdirectories_individually (bool): A flag that enables/disables a single HTML file for each subdirectory, or one for the
+        root directory
     file_path_map_path (str): Location of a JSON file that maps the path of the input file to the output file. This
         prevents re-analysis of files that have already been ran.
     ocr_map_path (str): Location of a JSON that maps hashed base64 image strings to their output text. This prevents
-    re-analysis of images that have already been seen.
+        re-analysis of images that have already been seen.
+    create_imageless_version (bool): Flag to produce an additional HTML file that has all the images removed (for quicker fuzzy finding)
     show_image (bool): flag to show to-be-processed OCR image to user, to allow manual image ignoring. The program will
         show a tkinter window and prompt for ignore status: "" = don't ignore, any char but n = ignore, "n" = don't ignore.
     image_output_path (str | None): Path to output OCR images, primarily for debugging purposes.
     print_status_table (bool): Flag to print status table
     tesseract_path (str): Location of the tesseract OCR excecutable.
     determine_ignore_image (Callable | None): A function that takes ints width and height and returns a boolean whether the image should
-        be exempt from being processed by the OCR
+        be exempt from being processed by the OC
     """
 
     def __init__(
@@ -40,10 +41,11 @@ class DocumentMergerConfig:
         ignored_dirs: tuple[str] = ("__pycache__",),
         ignored_files: list[str] = [],
         main_output_type: str = "html",
+        process_subdirectories_individually: bool = True,
         keep_temp_files: bool = True,
+        create_imageless_version: bool = False,
         show_image: bool = False,
         image_output_path: str | None = None,
-        absolute_temp_directory_names: bool = True,
         print_status_table: bool = True,
         determine_ignore_image: Callable | None = None,
     ):
@@ -55,11 +57,12 @@ class DocumentMergerConfig:
         self.main_output_type = main_output_type
         self.temp_file_path = temp_file_path
         self.keep_temp_files = keep_temp_files
-        self.absolute_temp_directory_names = absolute_temp_directory_names
+        self.process_subdirectories_individually = process_subdirectories_individually
 
         self.file_path_map_path = file_path_map_path
         self.ocr_map_path = ocr_map_path
 
+        self.create_imageless_version = create_imageless_version
         self.show_image = show_image
         self.image_output_path = image_output_path
 
