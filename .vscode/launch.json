@@ -5,7 +5,7 @@
             "name": "Python Debugger: Document Merger Main",
             "type": "debugpy",
             "request": "launch",
-            "program": "src/document-merger/document_merger.py",
+            "program": "example_usage.py",
             "console": "integratedTerminal"
         },
         {
