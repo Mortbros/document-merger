@@ -40,6 +40,11 @@ class StatusTable(object):
 
 
     def update_statuses(self, statuses, show=True, reset_to={}):
+        """
+        statuses (dict[str]): the names and values of the column that will be updated
+        show (bool): flag to show changed values immediately or on next update
+        reset_to (dict[str]): reset the status to this value on next change
+        """
         for k in statuses:
             if k in self.columns:
                 self.status[k] = statuses[k]
@@ -52,6 +57,12 @@ class StatusTable(object):
                 self.status[k] = reset_to[k] if k in reset_to.keys() else self.status[k]
 
     def update_status(self, key, value, show=True, reset_to=""):
+        """
+        key (str): the name of the column that will be updated
+        value (any): the value that is being updated
+        show (bool): flag to show changed values immediately or on next update
+        reset_to (any): reset the status to this value on next change
+        """
         if key in self.columns:
             self.status[key] = value
             if show:
@@ -60,8 +71,11 @@ class StatusTable(object):
             if reset_to:
                 self.status[key] = reset_to
 
-    # dirty approximation of glyph length of string with emojis. ✅ = 2 characters in monospace.
     def glen(self, key):
+        """
+        dirty approximation of glyph length of string with emojis. ✅ = 2 characters in monospace.
+        key (str): the value of the cell in the table
+        """
         return len(key) - sum(self.status[key].count(d) for d in self.double_chars) + int(self.columns[key]["width"])
 
     def align(self, key, text=None):
