@@ -26,6 +26,7 @@ from tkinter import simpledialog
 # TODO: Add flag to produce imagesless HTML
 # TODO: don't delete old version files
 # TODO: store hashes of all the processed files to prevent reprocessing of files at a global level
+# TODO: move imageless html functionality into Converter, move flag
 
 
 class Converter:
@@ -275,6 +276,14 @@ class Converter:
                         )
                         html_text.replace(unformatted_b64_img, "")
                 else:
+                    # self.status_table.update_status("Status", f"OCR ({i + 1})")
+                    self.status_table.update_statuses(
+                        {
+                            "IMS?": str(zlib.adler32(bytes(b64_img, encoding="utf8"))),
+                            "Status": f"OCR ({i + 1})",
+                        },
+                        show=False,
+                    )
                     # add ocr text of the image after the image tag
                     ocr_text = self.base64_ocr(b64_img)
 
