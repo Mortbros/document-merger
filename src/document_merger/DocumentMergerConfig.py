@@ -8,7 +8,8 @@ class DocumentMergerConfig:
 
     analysis_path (str): The directory that the main script will run. Analysis will take place on each (not ignored)
         subdirectory individually. i.e a seperate combined file will be created for each initial subdirectory in analysis_path.
-    ignored_dirs (tuple[str]): A list of directory names in analysis_path that have contents that should not be parsed.
+    ignored_dirs (tuple[str]): A list of directory names or absolute directory paths in analysis_path that have contents that should not
+        be parsed. Any directory with a name equal to a string in this list, or any directory that has the same path will be ignored.
     ignored_files (list[str]): A list of a mix of absolute or relative file paths to ignore when converting.
     merge_file_types (list[str]): List of file types to look for when processing.
     main_output_type (str): Output file extension type.
@@ -42,6 +43,7 @@ class DocumentMergerConfig:
         ignored_files: list[str] = [],
         main_output_type: str = "html",
         process_subdirectories_individually: bool = True,
+        absolute_temp_directory_names: bool = True,
         keep_temp_files: bool = True,
         create_imageless_version: bool = False,
         show_image: bool = False,
@@ -58,6 +60,7 @@ class DocumentMergerConfig:
         self.temp_file_path = temp_file_path
         self.keep_temp_files = keep_temp_files
         self.process_subdirectories_individually = process_subdirectories_individually
+        self.absolute_temp_directory_names = absolute_temp_directory_names
 
         self.file_path_map_path = file_path_map_path
         self.ocr_map_path = ocr_map_path
