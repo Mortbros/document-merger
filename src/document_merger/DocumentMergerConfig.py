@@ -55,7 +55,7 @@ class DocumentMergerConfig:
         self.ignored_dirs = ignored_dirs
         # ignored_files can be a mix of absolute and relative paths.
         self.ignored_files = ignored_files
-        self.merge_file_types = ("pdf", "docx", "pptx")
+        self.merge_file_types = ("pdf", "docx", "pptx", "html")
         self.main_output_type = main_output_type
         self.temp_file_path = temp_file_path
         self.keep_temp_files = keep_temp_files

@@ -105,7 +105,7 @@ class DocumentMerger:
                 # (yes i am aware that this introduces a bug with ignoring directories called C or C:, but if that ends up being an actual problem then i'll fix it)
                 # if any of the directories in the absolute path of the file is present in ignored_dirs, ignore that file
 
-                abs_file_path = os.path.abspath(file)
+                abs_file_path = os.path.join(os.getcwd(), root, file)
                 if (
                     file.endswith(self.config.merge_file_types)
                     and file not in self.config.ignored_files
@@ -115,35 +115,35 @@ class DocumentMerger:
                         f in self.config.ignored_dirs for f in abs_file_path.split("\\")
                     )
                 ):
-                    input_paths.append(os.path.abspath(os.path.join(root, file)))
+                    input_paths.append(abs_file_path)
 
-            for file in input_paths:
+        for file in input_paths:
+            output_path = os.path.join(
+                self.config.temp_file_path,
+                dir_name.split("\\")[-1],
+                converter.change_ext(
+                    file.split("\\")[-1], self.config.main_output_type
+                ),
+            )
+
+            if self.config.absolute_temp_directory_names:
+                # Make temporary directory with name that is unique to the input directory
+                # We do this by removing all invalid letters in the input, then replacing \ with !
+                # This modified path is then used as the directory name inside the temp file directory
                 output_path = os.path.join(
                     self.config.temp_file_path,
-                    dir_name.split("\\")[-1],
+                    self.generate_absolute_dir_name(file),
                     converter.change_ext(
                         file.split("\\")[-1], self.config.main_output_type
                     ),
                 )
-
-                if self.config.absolute_temp_directory_names:
-                    # Make temporary directory with name that is unique to the input directory
-                    # We do this by removing all invalid letters in the input, then replacing \ with !
-                    # This modified path is then used as the directory name inside the temp file directory
-                    output_path = os.path.join(
-                        self.config.temp_file_path,
-                        self.generate_absolute_dir_name(file),
-                        converter.change_ext(
-                            file.split("\\")[-1], self.config.main_output_type
-                        ),
-                    )
-                output_paths.append(output_path)
-                converter.convert(
-                    file,
-                    output_path,
-                    output_type=self.config.main_output_type,
-                    make_output_dirs=True,
-                )
+            output_paths.append(output_path)
+            converter.convert(
+                file,
+                output_path,
+                output_type=self.config.main_output_type,
+                make_output_dirs=True,
+            )
 
         # if no valid conversion files are found in the directory, don't merge html files
         # TODO fix the type of output_paths
