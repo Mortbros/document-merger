@@ -4,6 +4,7 @@ import os
 import re
 import json
 import zlib
+import shutil  # for copy
 
 import comtypes.client
 
@@ -24,9 +25,12 @@ from tkinter import simpledialog
 # TODO: https://github.com/aditeyabaral/convert2pdf/tree/master
 # TODO: Fix base64 image OCR text appendation
 # TODO: Add flag to produce imagesless HTML
-# TODO: don't delete old version files
 # TODO: store hashes of all the processed files to prevent reprocessing of files at a global level
 # TODO: move imageless html functionality into Converter, move flag
+# TODO: multithreading:
+#   given the batch of files
+#   run each conversion on a thread
+#       live update the line in the terminal, print to queue above when done
 
 
 class Converter:
@@ -34,11 +38,17 @@ class Converter:
         self.config = config
         self.created_files = []
         self.supported_input_types = ["pdf", "html", "pptx", "docx"]
-        self.supported_output_types = ["pdf", "html"]
+        self.supported_output_types = ["html"]
         self.status_table = StatusTable(print_output=self.config.print_status_table)
 
         with open(self.config.ocr_map_path, "r") as f:
-            self.ocr_map = json.load(f)
+            try:
+                self.ocr_map = json.load(f)
+            except json.decoder.JSONDecodeError:
+                print(
+                    f"JSON decode error on OCR map JSON, path {self.config.ocr_map_path}"
+                )
+                exit()
 
         if self.config.show_image:
             self.tk_root = tk.Tk()
@@ -76,7 +86,12 @@ class Converter:
             return False
 
         if not self.check_if_file_already_processed(input_file_path):
-            if input_type == "pdf" and output_type == "html":
+            # if the input and output types are the same, just copy the file into the temp directory
+            # notably, we don't run any OCR or internal file processing in this case
+            # the OCR may need to be rectified specifically for html to html
+            if input_type == output_type:
+                shutil.copy2(input_file_path, output_file_path)
+            elif input_type == "pdf" and output_type == "html":
                 self.PDF_to_HTML(
                     input_file_path, output_file_path, ocr, make_output_dirs
                 )
