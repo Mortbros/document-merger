@@ -44,8 +44,15 @@ class DocumentMerger:
         # iterate over all html files and append to merged html file
         with open(output_file_path, "a+", encoding="utf8") as out_f:
             for html_file in html_files:
-                with open(html_file, "r", encoding="utf8") as f:
-                    out_f.write(f.read())
+                # this is bad practise but hey, it works. Ideally i'd make a function that tries this and is used for all file opens
+                encoding = "utf8"
+                try:
+                    out_html = open(html_file, "r", encoding="utf8")
+                except UnicodeDecodeError:
+                    encoding = None
+                    out_html = open(html_file, "r", encoding=encoding)
+
+                out_f.write(out_html.read())
             # created_files.append(input_dir_path)
 
         self.status_table.update_status("Status", "Done")
