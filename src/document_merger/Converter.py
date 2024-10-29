@@ -45,10 +45,17 @@ class Converter:
             try:
                 self.ocr_map = json.load(f)
             except json.decoder.JSONDecodeError:
-                print(
-                    f"JSON decode error on OCR map JSON, path {self.config.ocr_map_path}"
-                )
-                exit()
+                # exited halfway through writing to the file, so just reset it to {}
+                if len(f.read()) == 0:
+                    with open(self.config.ocr_map_path, "w") as f:
+                        f.write("{}")
+                    self.ocr_map = {}
+                    print(f"JSON decode error on OCR map JSON, file has been reset")
+                else:
+                    print(
+                        f"JSON decode error on OCR map JSON, path {self.config.ocr_map_path}"
+                    )
+                    exit()
 
         if self.config.show_image:
             self.tk_root = tk.Tk()
@@ -410,7 +417,7 @@ class Converter:
         else:
             with open(self.config.file_path_map_path, "w", encoding="utf-8") as f:
                 _ = {}
-                f.write(json.dumps(_))
+            f.write(json.dumps(_))
 
     def prepare_path(self, path, new_extension=None, make_dirs=False):
         if make_dirs:
@@ -422,5 +429,11 @@ class Converter:
         return os.path.abspath(path)
 
     def write_ocr_map(self):
-        with open(self.config.ocr_map_path, "w") as f:
-            f.write(json.dumps(self.ocr_map, indent=4))
+        try:
+            with open(self.config.ocr_map_path, "w") as f:
+                f.write(json.dumps(self.ocr_map, indent=4))
+        except KeyboardInterrupt:
+            with open(self.config.ocr_map_path, "w") as f:
+                f.write(json.dumps(self.ocr_map, indent=4))
+            print("Keyboard interrupted detected, saving and exiting...")
+            exit()
