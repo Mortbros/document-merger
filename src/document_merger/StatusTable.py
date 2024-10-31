@@ -18,12 +18,12 @@ class StatusTable(object):
                 ("File Name", {"width": 20, "align": "center"}),
                 ("Input", {"width": 0, "align": "center"}),
                 ("Output", {"width": 0, "align": "center"}),
-                ("OCR Text", {"width": 10, "align": "left"}),
+                ("OCR Text", {"width": 5, "align": "left"}),
                 # Image skipped?
                 ("IMS?", {"width": 10, "align": "left"}),
                 # Already processed?
                 ("AP?", {"width": 0, "align": "left"}),
-                ("Status", {"width": 6, "align": "center"}),
+                ("Status", {"width": 11, "align": "center"}),
                 ("Timestamp", {"width": 0, "align": "center"}),
             ]
         )
@@ -33,11 +33,10 @@ class StatusTable(object):
 
         self.status["IMS?"] = "❌"
         self.status["AP?"] = "❌"
-        
+
         self.print_output = print_output
 
         self.print(title=True)
-
 
     def update_statuses(self, statuses, show=True, reset_to={}):
         """
@@ -48,7 +47,7 @@ class StatusTable(object):
         for k in statuses:
             if k in self.columns:
                 self.status[k] = statuses[k]
-        
+
         if show:
             self.print(highlight=statuses)
 
@@ -67,7 +66,7 @@ class StatusTable(object):
             self.status[key] = value
             if show:
                 self.print(highlight=[key])
-            
+
             if reset_to:
                 self.status[key] = reset_to
 
@@ -76,7 +75,11 @@ class StatusTable(object):
         dirty approximation of glyph length of string with emojis. ✅ = 2 characters in monospace.
         key (str): the value of the cell in the table
         """
-        return len(key) - sum(self.status[key].count(d) for d in self.double_chars) + int(self.columns[key]["width"])
+        return (
+            len(key)
+            - sum(self.status[key].count(d) for d in self.double_chars)
+            + int(self.columns[key]["width"])
+        )
 
     def align(self, key, text=None):
         if text == None:
@@ -85,7 +88,7 @@ class StatusTable(object):
             return text.center(self.glen(key))
         elif self.columns[key]["align"] == "left":
             return text.ljust(self.glen(key))
-        else: # defaults to center align
+        else:  # defaults to center align
             return text.center(self.glen(key))
 
     def print(self, title=False, highlight=[None]):
