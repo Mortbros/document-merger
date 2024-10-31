@@ -13,7 +13,10 @@ import time
 class DocumentMerger:
     def __init__(self, config):
         self.config = config
+        self.config.initialise_files()
+
         self.status_table = StatusTable(self.config.print_status_table)
+        self.converter = Converter(self.config)
 
     def merge_html_files(self, input_dir_paths, output_file_path):
         self.status_table.update_statuses(
@@ -95,7 +98,6 @@ class DocumentMerger:
 
     def process_subdirectory(self, dir_name):
         # takes a directory and performs the conversion and merging process for that directory
-        converter = Converter(self.config)
 
         self.status_table.update_status("Directory", dir_name.split("\\")[-1])
 
@@ -128,7 +130,7 @@ class DocumentMerger:
             output_path = os.path.join(
                 self.config.temp_file_path,
                 dir_name.split("\\")[-1],
-                converter.change_ext(
+                self.converter.change_ext(
                     file.split("\\")[-1], self.config.main_output_type
                 ),
             )
@@ -140,17 +142,21 @@ class DocumentMerger:
                 output_path = os.path.join(
                     self.config.temp_file_path,
                     self.generate_absolute_dir_name(file),
-                    converter.change_ext(
+                    self.converter.change_ext(
                         file.split("\\")[-1], self.config.main_output_type
                     ),
                 )
-            output_paths.append(output_path)
-            converter.convert(
+            # Feed output_path in converter.convert, it is returned verbatim if successful
+            # the file path is potentially changed if the file content hash matches an existing file in another location
+            converted_path = self.converter.convert(
                 file,
                 output_path,
                 output_type=self.config.main_output_type,
                 make_output_dirs=True,
             )
+
+            if converted_path:
+                output_paths.append(converted_path)
 
         # if no valid conversion files are found in the directory, don't merge html files
         # TODO fix the type of output_paths
@@ -167,41 +173,46 @@ class DocumentMerger:
             )
 
     def start(self):
-        start_time = time.time()
-        logging.getLogger().setLevel(logging.ERROR)
+        try:
+            start_time = time.time()
+            logging.getLogger().setLevel(logging.ERROR)
 
-        self.config.initialise_files()
+            # change directory to analysis path
+            os.chdir(self.config.analysis_path)
 
-        # change directory to analysis path
-        os.chdir(self.config.analysis_path)
-
-        # iterate over subdirectories in analysis path
-        if self.config.process_subdirectories_individually:
-            for dir_name in os.listdir("."):
-                if (
-                    os.path.isdir(dir_name)
-                    and len(os.listdir(dir_name)) != 0
-                    and os.path.exists(dir_name)
-                ):
-                    # this is a bit of an agressive way of doing directory ignoring, but it should work for now
+            # iterate over subdirectories in analysis path
+            if self.config.process_subdirectories_individually:
+                for dir_name in os.listdir("."):
                     if (
-                        dir_name not in self.config.ignored_dirs
-                        and os.path.abspath(dir_name) not in self.config.ignored_dirs
-                        and not os.path.abspath(dir_name).startswith(
-                            self.config.ignored_dirs
-                        )
-                        and not any(
-                            f in self.config.ignored_dirs
-                            for f in os.path.abspath(dir_name).split("\\")
-                        )
+                        os.path.isdir(dir_name)
+                        and len(os.listdir(dir_name)) != 0
+                        and os.path.exists(dir_name)
                     ):
-                        # run function for each directory in the root directory: one output per subdirectory
-                        self.process_subdirectory(dir_name)
-        else:
-            # run function on root directory: one output overall, for the root directory
-            self.process_subdirectory(self.config.analysis_path)
+                        # this is a bit of an agressive way of doing directory ignoring, but it should work for now
+                        if (
+                            dir_name not in self.config.ignored_dirs
+                            and os.path.abspath(dir_name)
+                            not in self.config.ignored_dirs
+                            and not os.path.abspath(dir_name).startswith(
+                                self.config.ignored_dirs
+                            )
+                            and not any(
+                                f in self.config.ignored_dirs
+                                for f in os.path.abspath(dir_name).split("\\")
+                            )
+                        ):
+                            # run function for each directory in the root directory: one output per subdirectory
+                            self.process_subdirectory(dir_name)
+            else:
+                # run function on root directory: one output overall, for the root directory
+                self.process_subdirectory(self.config.analysis_path)
 
-        if not self.config.keep_temp_files:
-            shutil.rmtree(self.config.temp_file_path)
+            if not self.config.keep_temp_files:
+                shutil.rmtree(self.config.temp_file_path)
 
-        print(f"Finished in {round(time.time() - start_time, 2)} seconds")
+            self.converter.write_to_cache_file()
+
+            print(f"Finished in {round(time.time() - start_time, 2)} seconds")
+        except KeyboardInterrupt:
+            self.converter.write_to_cache_file()
+            print("Exiting prematurely...")

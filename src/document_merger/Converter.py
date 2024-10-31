@@ -3,7 +3,8 @@ from .StatusTable import StatusTable
 import os
 import re
 import json
-import zlib
+import zlib  # adler32 hashing
+import hashlib  # file_digest sha256 hashing
 import shutil  # for copy
 
 import comtypes.client
@@ -31,6 +32,11 @@ from tkinter import simpledialog
 #   given the batch of files
 #   run each conversion on a thread
 #       live update the line in the terminal, print to queue above when done
+# TODO: combine all the code for the start and end of each conversion function into 2 functions
+# TODO: add _ to the start of all conversion files to indicate that the proper procedure is not being followed if they are used standalone
+# alternatively, just add proper prodedure to the start and end functions that is mentioned in the above todo
+# TODO: there exists an issue where the file is skipped because it has already been processed, but the output from the previous process doesn't exist in the current folder. The reprocessing is skipped but the file is not added to the final output
+# in this case we need to keep track of and manually inject the preprocessed output file(s) into the final HTML merging file
 
 
 class Converter:
@@ -41,19 +47,27 @@ class Converter:
         self.supported_output_types = ["html"]
         self.status_table = StatusTable(print_output=self.config.print_status_table)
 
-        with open(self.config.ocr_map_path, "r") as f:
+        self.ocr_map = {}
+        self.file_path_map = {}
+        self.processed_file_hashes = {}
+
+        with open(self.config.cache_file_path, "r") as f:
             try:
-                self.ocr_map = json.load(f)
+                cache_data = json.load(f)
+
+                self.ocr_map = cache_data["ocr_map"]
+                self.file_path_map = cache_data["file_path_map"]
+                self.processed_file_hashes = cache_data["processed_file_hashes"]
+
             except json.decoder.JSONDecodeError:
                 # exited halfway through writing to the file, so just reset it to {}
                 if len(f.read()) == 0:
-                    with open(self.config.ocr_map_path, "w") as f:
+                    with open(self.config.cache_file_path, "w") as f:
                         f.write("{}")
-                    self.ocr_map = {}
-                    print(f"JSON decode error on OCR map JSON, file has been reset")
+                    print(f"JSON decode error on cache JSON, file has been reset")
                 else:
                     print(
-                        f"JSON decode error on OCR map JSON, path {self.config.ocr_map_path}"
+                        f"JSON decode error on cache JSON, path {self.config.cache_file_path}"
                     )
                     exit()
 
@@ -92,7 +106,9 @@ class Converter:
             )
             return False
 
-        if not self.check_if_file_already_processed(input_file_path):
+        # If file content has been processed in a different folder, return the path to that file
+        file_processed_path = self.check_if_file_already_processed(input_file_path)
+        if not file_processed_path:
             # if the input and output types are the same, just copy the file into the temp directory
             # notably, we don't run any OCR or internal file processing in this case
             # the OCR may need to be rectified specifically for html to html
@@ -110,7 +126,7 @@ class Converter:
                 self.PPTX_to_HTML(input_file_path, output_file_path, make_output_dirs)
             else:
                 print(f"Invalid conversion type pair {input_type} and {output_type}")
-            self.write_ocr_map()
+                output_file_path = None
         else:
             self.status_table.update_statuses(
                 {
@@ -119,6 +135,9 @@ class Converter:
                 },
                 reset_to={"AP?": "❌", "File Name": ""},
             )
+            output_file_path = file_processed_path
+
+        return output_file_path
 
     def PDF_to_DOCX(self, input_file_path, output_file_path, make_output_dirs=False):
         self.status_table.update_statuses(
@@ -138,7 +157,9 @@ class Converter:
         cv = pdf2docx_Converter(input_file_path)
         cv.convert(output_file_path)
         cv.close()
-        self.created_files.append(output_file_path)
+
+        self.map_processed_file(input_file_path, output_file_path)
+
         self.status_table.update_status("Status", "Done")
 
         return True
@@ -162,6 +183,8 @@ class Converter:
             with open(input_file_path, "rb") as f:
                 o_f.write(mammoth.convert_to_html(f).value)
         self.created_files.append(output_file_path)
+
+        self.map_processed_file(input_file_path, output_file_path)
 
         self.status_table.update_status("Status", "Done")
 
@@ -189,6 +212,8 @@ class Converter:
         deck.SaveAs(output_file_path, formatType)
         deck.Close()
         powerpoint.Quit()
+
+        self.map_processed_file(input_file_path, output_file_path)
 
         self.status_table.update_status("Status", "Done")
 
@@ -373,7 +398,7 @@ class Converter:
 
             # exit for this session, value of config.show_image in file stays the same
             if response.lower() == "exit":
-                self.write_ocr_map()
+                self.write_to_cache_file()
                 self.tk_root.quit()
                 self.config.show_image = False
 
@@ -394,30 +419,49 @@ class Converter:
 
             self.ocr_map[hashed_b64_string]["text"] = ocr_text
 
-        self.write_ocr_map()
         return ocr_text
 
     def change_ext(self, file, new_extension):
         return f"{file[0:file.rfind('.')]}.{new_extension.replace('.', '')}"
 
-    def map_processed_file(self, in_filepath, out_filepath):
-        with open(self.config.file_path_map_path, "r+") as f:
-            path_map = json.loads(f.read())
-            path_map[in_filepath] = out_filepath
-            f.seek(0)
-            f.write(json.dumps(path_map, indent=4))
-            f.truncate()
-            f.close()
+    def write_to_cache_file(self):
+        self.status_table.update_status("Status", "Writing cache")
+        with open(self.config.cache_file_path, "w") as cache_file:
+            cache_file.write(
+                json.dumps(
+                    {
+                        "ocr_map": self.ocr_map,
+                        "file_path_map": self.file_path_map,
+                        "processed_file_hashes": self.processed_file_hashes,
+                    },
+                    indent=4,
+                )
+            )
 
-    def check_if_file_already_processed(self, filepath):
-        if os.path.exists(self.config.file_path_map_path):
-            with open(self.config.file_path_map_path, "r+") as f:
-                path_map = json.loads(f.read())
-                return filepath in path_map
+    def generate_file_hash(self, file_path):
+        with open(file_path, "rb", buffering=0) as f:
+            return hashlib.file_digest(f, "sha256").hexdigest()
+
+    def map_processed_file(self, in_file_path, out_file_path):
+        if out_file_path.split(".")[-1] == self.config.main_output_type:
+            self.file_path_map[in_file_path] = out_file_path
+
+            # key: the hash of the content of the processed file
+            # value: the location of the processed file, "look here instead"
+            self.processed_file_hashes[self.generate_file_hash(in_file_path)] = (
+                out_file_path
+            )
+
+    def check_if_file_already_processed(self, file_path):
+        # check if file path has been seen before, alternatively check if the (hashed) file content has been seen before
+        if file_path in self.file_path_map:
+            return self.file_path_map[file_path]
         else:
-            with open(self.config.file_path_map_path, "w", encoding="utf-8") as f:
-                _ = {}
-            f.write(json.dumps(_))
+            file_hash = self.generate_file_hash(file_path)
+            if file_hash in self.processed_file_hashes:
+                return self.processed_file_hashes[file_hash]
+            else:
+                return False
 
     def prepare_path(self, path, new_extension=None, make_dirs=False):
         if make_dirs:
@@ -427,13 +471,3 @@ class Converter:
             path = self.change_ext(path, new_extension)
 
         return os.path.abspath(path)
-
-    def write_ocr_map(self):
-        try:
-            with open(self.config.ocr_map_path, "w") as f:
-                f.write(json.dumps(self.ocr_map, indent=4))
-        except KeyboardInterrupt:
-            with open(self.config.ocr_map_path, "w") as f:
-                f.write(json.dumps(self.ocr_map, indent=4))
-            print("Keyboard interrupted detected, saving and exiting...")
-            exit()

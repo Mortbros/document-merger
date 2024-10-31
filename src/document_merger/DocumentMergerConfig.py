@@ -18,10 +18,10 @@ class DocumentMergerConfig:
         force the program to reprocess every file.
     process_subdirectories_individually (bool): A flag that enables/disables a single HTML file for each subdirectory, or one for the
         root directory
-    file_path_map_path (str): Location of a JSON file that maps the path of the input file to the output file. This
-        prevents re-analysis of files that have already been ran.
-    ocr_map_path (str): Location of a JSON that maps hashed base64 image strings to their output text. This prevents
-        re-analysis of images that have already been seen.
+    cache_file_path (str): location of JSON file that stores the following information
+        file_path_map (str): Maps the path of the input file to the output file. This prevents re-analysis of files that have already been ran.
+        ocr_map (str): Maps hashed base64 image strings to their output text. This prevents re-analysis of images that have already been seen.
+        file_hashes (str): A list of the hashes of the contents of all files that have been processed, to prevent re-processing of duplicate files with different paths.
     create_imageless_version (bool): Flag to produce an additional HTML file that has all the images removed (for quicker fuzzy finding)
     show_image (bool): flag to show to-be-processed OCR image to user, to allow manual image ignoring. The program will
         show a tkinter window and prompt for ignore status: "" = don't ignore, any char but n = ignore, "n" = don't ignore.
@@ -36,8 +36,7 @@ class DocumentMergerConfig:
         self,
         analysis_path: str,
         temp_file_path: str,
-        file_path_map_path: str,
-        ocr_map_path: str,
+        cache_file_path: str,
         tesseract_path: str,
         ignored_dirs: tuple[str] = ("__pycache__",),
         ignored_files: list[str] = [],
@@ -62,8 +61,7 @@ class DocumentMergerConfig:
         self.process_subdirectories_individually = process_subdirectories_individually
         self.absolute_temp_directory_names = absolute_temp_directory_names
 
-        self.file_path_map_path = file_path_map_path
-        self.ocr_map_path = ocr_map_path
+        self.cache_file_path = cache_file_path
 
         self.create_imageless_version = create_imageless_version
         self.show_image = show_image
@@ -90,12 +88,11 @@ class DocumentMergerConfig:
 
         return ignore
 
-    def initialise_json_file(self, filename):
+    def initialise_json_file(self, filename, data={}):
         if not os.path.exists(filename):
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, "w") as f:
-                _ = {}
-                f.write(json.dumps(_))
+                f.write(json.dumps(data))
 
     def initialise_directory(self, path):
         if path:
@@ -106,5 +103,11 @@ class DocumentMergerConfig:
         self.initialise_directory(self.temp_file_path)
         self.initialise_directory(self.image_output_path)
 
-        self.initialise_json_file(self.file_path_map_path)
-        self.initialise_json_file(self.ocr_map_path)
+        self.initialise_json_file(
+            self.cache_file_path,
+            {
+                "ocr_map": {},
+                "file_path_map": {},
+                "processed_file_hashes": {},
+            },
+        )
