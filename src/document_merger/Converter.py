@@ -35,8 +35,7 @@ from tkinter import simpledialog
 # TODO: combine all the code for the start and end of each conversion function into 2 functions
 # TODO: add _ to the start of all conversion files to indicate that the proper procedure is not being followed if they are used standalone
 # alternatively, just add proper prodedure to the start and end functions that is mentioned in the above todo
-# TODO: there exists an issue where the file is skipped because it has already been processed, but the output from the previous process doesn't exist in the current folder. The reprocessing is skipped but the file is not added to the final output
-# in this case we need to keep track of and manually inject the preprocessed output file(s) into the final HTML merging file
+# TODO: test file hashing
 
 
 class Converter:
@@ -112,18 +111,21 @@ class Converter:
             # if the input and output types are the same, just copy the file into the temp directory
             # notably, we don't run any OCR or internal file processing in this case
             # the OCR may need to be rectified specifically for html to html
+            input_file_path = self.prepare_path(input_file_path, input_type)
+            output_file_path = self.prepare_path(
+                output_file_path, output_type, make_dirs=make_output_dirs
+            )
+
             if input_type == output_type:
                 shutil.copy2(input_file_path, output_file_path)
             elif input_type == "pdf" and output_type == "html":
-                self.PDF_to_HTML(
-                    input_file_path, output_file_path, ocr, make_output_dirs
-                )
+                self._PDF_to_HTML(input_file_path, output_file_path, ocr)
             elif input_type == "pdf" and output_type == "docx":
-                self.PDF_to_DOCX(input_file_path, output_file_path, make_output_dirs)
+                self._PDF_to_DOCX(input_file_path, output_file_path)
             elif input_type == "docx" and output_type == "html":
-                self.DOCX_to_HTML(input_file_path, output_file_path, make_output_dirs)
+                self._DOCX_to_HTML(input_file_path, output_file_path)
             elif input_type == "pptx" and output_type == "html":
-                self.PPTX_to_HTML(input_file_path, output_file_path, make_output_dirs)
+                self._PPTX_to_HTML(input_file_path, output_file_path)
             else:
                 print(f"Invalid conversion type pair {input_type} and {output_type}")
                 output_file_path = None
@@ -139,73 +141,50 @@ class Converter:
 
         return output_file_path
 
-    def PDF_to_DOCX(self, input_file_path, output_file_path, make_output_dirs=False):
+    def _conversion_setup(self, input_file_path, output_file_path):
+        """
+        A private helper function for starting file conversion. Updates table status and initialises
+        """
         self.status_table.update_statuses(
             {
                 "File Name": input_file_path.split("\\")[-1],
-                "Input": "pdf",
-                "Output": "docx",
+                "Input": input_file_path.split(".")[-1],
+                "Output": output_file_path.split(".")[-1],
                 "Status": "Converting",
             },
         )
 
-        input_file_path = self.prepare_path(input_file_path, "pdf")
-        output_file_path = self.prepare_path(
-            output_file_path, "docx", make_dirs=make_output_dirs
-        )
+    def _conversion_finish(self, input_file_path, output_file_path):
+        self.map_processed_file(input_file_path, output_file_path)
+
+        self.status_table.update_status("Status", "Done")
+
+    def _PDF_to_DOCX(self, input_file_path, output_file_path):
+
+        self._conversion_setup(input_file_path, output_file_path)
 
         cv = pdf2docx_Converter(input_file_path)
         cv.convert(output_file_path)
         cv.close()
 
-        self.map_processed_file(input_file_path, output_file_path)
-
-        self.status_table.update_status("Status", "Done")
+        self._conversion_finish(input_file_path, output_file_path)
 
         return True
 
-    def DOCX_to_HTML(self, input_file_path, output_file_path, make_output_dirs=False):
-        self.status_table.update_statuses(
-            {
-                "File Name": input_file_path.split("\\")[-1],
-                "Input": "docx",
-                "Output": "html",
-                "Status": "Converting",
-            },
-            reset_to={},
-        )
-        input_file_path = self.prepare_path(input_file_path, "docx")
-        output_file_path = self.prepare_path(
-            output_file_path, "html", make_dirs=make_output_dirs
-        )
+    def _DOCX_to_HTML(self, input_file_path, output_file_path):
+        self._conversion_setup(input_file_path, output_file_path)
 
         with open(output_file_path, "w", encoding="utf-8") as o_f:
             with open(input_file_path, "rb") as f:
                 o_f.write(mammoth.convert_to_html(f).value)
         self.created_files.append(output_file_path)
 
-        self.map_processed_file(input_file_path, output_file_path)
-
-        self.status_table.update_status("Status", "Done")
+        self._conversion_finish(input_file_path, output_file_path)
 
         return True
 
-    def PPTX_to_PDF(
-        self, input_file_path, output_file_path, make_output_dirs=False, formatType=32
-    ):
-        self.status_table.update_statuses(
-            {
-                "File Name": input_file_path.split("\\")[-1],
-                "Input": "pptx",
-                "Out": "pdf",
-                "Status": "Converting",
-            },
-        )
-
-        input_file_path = self.prepare_path(input_file_path, "pptx")
-        output_file_path = self.prepare_path(
-            output_file_path, "pdf", make_dirs=make_output_dirs
-        )
+    def _PPTX_to_PDF(self, input_file_path, output_file_path, formatType=32):
+        self._conversion_setup(input_file_path, output_file_path)
 
         powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
         deck = powerpoint.Presentations.Open(input_file_path, WithWindow=False)
@@ -213,72 +192,38 @@ class Converter:
         deck.Close()
         powerpoint.Quit()
 
-        self.map_processed_file(input_file_path, output_file_path)
-
-        self.status_table.update_status("Status", "Done")
+        self._conversion_finish(input_file_path, output_file_path)
 
         return True
 
     # transitive (multiple steps)
-    def PDF_to_HTML(
-        self, input_file_path, output_file_path, ocr=True, make_output_dirs=False
-    ):
-        self.status_table.update_statuses(
-            {
-                "File Name": input_file_path.split("\\")[-1],
-                "Input": "pdf",
-                "Output": "html",
-                "Status": "Converting",
-            },
-        )
-
-        input_file_path = self.prepare_path(input_file_path, "pdf")
-        output_file_path = self.prepare_path(
-            output_file_path, "html", make_dirs=make_output_dirs
-        )
+    def _PDF_to_HTML(self, input_file_path, output_file_path, ocr=True):
+        self._conversion_setup(input_file_path, output_file_path)
 
         docx_intermediatary_path = self.change_ext(output_file_path, "docx")
 
-        self.PDF_to_DOCX(input_file_path, docx_intermediatary_path)
-        self.DOCX_to_HTML(docx_intermediatary_path, output_file_path)
+        self._PDF_to_DOCX(input_file_path, docx_intermediatary_path)
+        self._DOCX_to_HTML(docx_intermediatary_path, output_file_path)
         os.remove(docx_intermediatary_path)
 
         if ocr:
             self.HTML_ocr(output_file_path)
 
-        self.map_processed_file(input_file_path, output_file_path)
-
-        self.status_table.update_status("Status", "Done")
+        self._conversion_finish(input_file_path, output_file_path)
 
         return True
 
     # transitive (multiple steps)
-    def PPTX_to_HTML(
-        self, input_file_path, output_file_path, ocr=True, make_output_dirs=False
-    ):
-        self.status_table.update_statuses(
-            {
-                "File Name": input_file_path.split("\\")[-1],
-                "Input": "pptx",
-                "Output": "html",
-                "Status": "Converting",
-            },
-        )
-
-        input_file_path = self.prepare_path(input_file_path, "pptx")
-        output_file_path = self.prepare_path(
-            output_file_path, "html", make_dirs=make_output_dirs
-        )
+    def _PPTX_to_HTML(self, input_file_path, output_file_path, ocr=True):
+        self._conversion_setup(input_file_path, output_file_path)
 
         pdf_intermediatary_path = self.change_ext(output_file_path, "pdf")
 
-        self.PPTX_to_PDF(input_file_path, pdf_intermediatary_path)
-        self.PDF_to_HTML(pdf_intermediatary_path, output_file_path, ocr=ocr)
+        self._PPTX_to_PDF(input_file_path, pdf_intermediatary_path)
+        self._PDF_to_HTML(pdf_intermediatary_path, output_file_path, ocr=ocr)
         os.remove(pdf_intermediatary_path)
 
-        self.map_processed_file(input_file_path, output_file_path)
-
-        self.status_table.update_status("Status", "Done")
+        self._conversion_finish(input_file_path, output_file_path)
 
         return True
 

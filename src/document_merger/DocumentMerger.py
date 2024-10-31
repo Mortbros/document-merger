@@ -148,6 +148,9 @@ class DocumentMerger:
                 )
             # Feed output_path in converter.convert, it is returned verbatim if successful
             # the file path is potentially changed if the file content hash matches an existing file in another location
+            # This fixes a potential issue where the file is skipped because it has already been processed, but the output from the previous process doesn't exist in the current folder.
+            # The reprocessing is skipped but the file is not added to the final output.
+            # In this case we need to keep track of and override the output file path to the path of the preprocessed output file
             converted_path = self.converter.convert(
                 file,
                 output_path,
